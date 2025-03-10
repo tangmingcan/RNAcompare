@@ -102,5 +102,4 @@ python manage.py runserver
 Open your web browser and go to http://127.0.0.1:8000/ to see your Django project running.
 
 ##### 8.1 Upload shared dataset
-Similar to RNAcare, you can upload shared dataset into the platform for demonstration. See how to operate in RNAcare Step 7.1
-https://github.com/sii-scRNA-Seq/RNAcare/tree/main
+Similar to RNAcare, you can upload shared dataset into the platform for demonstration. 
