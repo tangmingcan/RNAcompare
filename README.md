@@ -16,3 +16,91 @@ First, clone the repository from GitHub to your local machine.
 https://github.com/tangmingcan/RNAcompare.git
 cd RNAcompare
 ```
+#### Step 2: Set Up a Virtual Environment(for development, we use python 3.11)
+It's a good practice to use a virtual environment to manage your project's dependencies.
+```python
+# Install virtualenv if you haven't already
+pip install virtualenv
+
+# Create a virtual environment
+python3 -m virtualenv venv
+
+# Activate the virtual environment
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
+```
+#### Step 3: Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+#### Step 4: Configure the Django Settings
+Ensure the Django settings file is configured correctly. The default settings for SQLite should be fine if you're running it locally.
+
+Open the settings.py file in your Django project directory and check the database settings and modify the uploaded folder:
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / "db.sqlite3",
+    }
+}
+
+# change to your own folder for storing user specific uploaded expression and clinic files and storing the shared cohorts data
+MEDIA_URL = "/data/mingcanIMID/"
+MEDIA_ROOT = os.path.join("/data/mingcanIMID/", "uploaded")
+
+# change to your local server if it is not 127.0.0.1
+ALLOWED_HOSTS = ["127.0.0.1"]
+```
+You might also want to change the directory for user uploaded files from the default value to some other directory that you have write access to:
+```python
+MEDIA_ROOT = os.path.join(BASE_DIR, "uploaded")
+```
+#### Step 5: Run Migrations to configure database
+In order to create the database db.sqlite3 and configure the schema, run the following:
+```bash
+python manage.py migrate
+```
+#### Step 6: Create a Superuser (if needed)
+If you need to create a superuser for accessing the Django admin interface, you can do so with:
+```bash
+python manage.py createsuperuser
+```
+#### Step 7: Configure Celery and Redis
+The project is built based on Django + Celery + Redis to avoid some issues of fig.save for matplotlib. In order to use Celery and Redis, please have a reference about how to set up it: https://realpython.com/asynchronous-tasks-with-django-and-celery/
+
+Install Redis server:
+```bash
+# On Linux/WSL2(Windows)
+sudo apt install redis
+# On macOS
+brew install redis
+```
+To start the Redis server, open another console:
+```bash
+redis-server --port 8001
+```
+Then open another console for test:
+```bash
+redis-cli -p 8001
+```
+If successfully connected, you should see a cursor with 127.0.0.1:8001>.
+
+Note: Celery settings are defined in djangoproject/settings.py and djangoproject/Celery.py, with the corresponding port number and serialization method for redis.
+
+Open another console to start Celery:
+```bash
+python3 -m celery -A djangoproject worker -l info
+```
+#### Step 8: Run the Django Development Server
+Finally, run the Django development server to verify that everything is set up correctly.
+```bash
+python manage.py runserver
+```
+Open your web browser and go to http://127.0.0.1:8000/ to see your Django project running.
+
+##### 8.1 Upload shared dataset
+Similar to RNAcare, you can upload shared dataset into the platform for demonstration. See how to operate in RNAcare Step 7.1
+https://github.com/sii-scRNA-Seq/RNAcare/tree/main
