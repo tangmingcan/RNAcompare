@@ -115,3 +115,9 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Real-IP $remote_addr;
 ```
 Reload Nginx to apply the changes:`sudo systemctl reload nginx`
+#### Step 10: Constants setting
+In constants.py, there are a few global parameters:
+```python
+ALLOW_UPLOAD = True # This is to control the platform whether to allow user to upload data
+SHAP_PLOT_DATASET='X' # This is for SHAP importance plot and dependence plot based on X/X_train/X_test dataset.
+```
