@@ -106,9 +106,8 @@ Similar to RNAcare, you can upload shared dataset into the platform for demonstr
 
 #### Step 9(optional): Nginx setting
 Edit your Nginx configuration file (e.g., /etc/nginx/sites-available/your_site.conf) and ensure it includes the following directive inside the appropriate location or server block:
-
+```bash
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Real-IP $remote_addr;
-Reload Nginx to apply the changes:
-
-sudo systemctl reload nginx
+```
+Reload Nginx to apply the changes:`sudo systemctl reload nginx`
