@@ -103,6 +103,8 @@ Open your web browser and go to http://127.0.0.1:8000/ to see your Django projec
 
 ##### 8.1 Upload shared dataset
 Similar to RNAcare, you can upload shared dataset into the platform for demonstration. 
+##### 8.1 Upload shared dataset
+Similar to RNAcare, you can do role management for different users to control their access to shared datasets.
 
 #### Step 9(optional): Nginx setting
 Edit your Nginx configuration file (e.g., /etc/nginx/sites-available/your_site.conf) and ensure it includes the following directive inside the appropriate location or server block:
