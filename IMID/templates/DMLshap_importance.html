@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+#loader{
+  position:fixed;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:100%;
+  z-index:99999;
+  background:url(/static/loading12.gif) 50% 50% no-repeat rgb(15 10 10 /59%);
+  background-size:200px;
+  }
+</style>
+<div id='loader' style='display:none'></div>
+<div id='cID' style='display:none'>{{ clientID }}</div>
+<h4>DML SHAP Importance Visualization</h4>
+    
+    <!-- Embed the SVG directly -->
+    <div style='width:1800px;'>
+    <img src="data:image/svg+xml;base64,{{ svg_content }}" alt="SHAP importance Visualization">
+    <br><br>
+    <h4>SHAP Top 6 Important Features</h4>
+    
+    <!-- Input box displaying top 6 features -->
+    <label for="featureInput">Features:</label><br>
+    <input type="text" id="featureInput" value="{{ feature_names }}" style="width: 40%;" />
+
+    <!-- Button to trigger AJAX event -->
+    <button id="submitFeatures" class="btn btn-primary" onclick="loadDistri();">See distributions</button>
+    <br><br>
+    <div id='topFeatures'></div>
+    
+<script>
+    function loadDistri(){
+        $('#topFeatures').html('');
+        val1=$('#featureInput').val().replace(/\s+/g, '');
+        url1="distribution/?param="+val1+"&cID={{ clientID }}";
+        $.ajax({
+        	url:url1,
+	        dataType:'json',
+	        cache:false,
+	        contentType:'application/json',
+	        processData:false,
+	        type:'get',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){
+        	    $('#topFeatures').html('<img src="data:image/svg+xml;base64,'+response.image+'" width="auto" height="600px"/>');
+        	},
+        	error:function(response){alert('Calculation Failed!');}
+        });
+    }
+</script>
+{% endblock %}

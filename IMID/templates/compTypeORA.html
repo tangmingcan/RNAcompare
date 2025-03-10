@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+  #loader{
+  position:fixed;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:100%;
+  z-index:99999;
+  background:url(/static/loading12.gif) 50% 50% no-repeat rgb(15 10 10 /59%);
+  background-size:200px;
+  }
+</style>
+
+<div id='loader' style='display:none'></div>
+<div id='cID' style='display:none'>{{ clientID }}</div>
+<h4>Based on ORA:</h4>
+<div id="tabs_advanced" style='width:1800px;'>
+  <ul>
+    <li><a href="#tabs-1">ORA</a></li>
+  </ul>
+  <div id="tabs-1">
+  	<table>
+  		<tr>
+  			<td>
+  				<p>Select database for ORA: </p>
+			  	<select id='msigdb'>
+			  		<option value="reactome_pathways" selected='selected'>Reactome Pathways</option>
+					  <option value="hallmark">Hallmark</option>
+					  <option value='cell_type_signatures'>Cell type signatures</option>
+					</select>
+				</td>
+				<td>
+					<p>Select Label for differentiate:</p>
+			  	<select id='diff_label' onchange="">
+						  <option value='' selected='selected'>----SELECT----</option>
+						  {% for label in root.labels %}
+    				    <option value="{{ label }}" title="{{ label }}">{{ label }}</option>
+    				    {% endfor %}
+					</select>
+				</td>
+				<td>
+					<p>Select Label for plot:</p>
+			  	<select id='plot_label' onchange="">
+						  <option value='' selected='selected'>----SELECT----</option>
+						  {% for label in root.labels %}
+    				    <option value="{{ label }}" title="{{ label }}">{{ label }}</option>
+    				    {% endfor %}
+					</select>
+				</td>
+			</tr>
+		</table>
+		<br>
+		<button class="btn btn-primary" onclick="run();">Run ORA</button>
+  </div>
+</div>
+
+<script>
+$( function() {
+    $(document).tooltip();
+    tabs=$( "#tabs_advanced" );
+    tabs.tabs();
+});
+clientUniqueID= '{{ root.cID }}';
+function run(){
+    db=$('#msigdb').val();
+    de=$('#diff_label').val();
+    group=$('#plot_label').val();
+    window.open('report/?msigdb='+db+'&diff='+de+'&top=50&group='+group+'&cID={{ root.cID }}','_blank');
+}
+</script>
+
+{% endblock %}

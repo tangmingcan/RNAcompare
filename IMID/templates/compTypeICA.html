@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+  #loader{
+  position:fixed;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:100%;
+  z-index:99999;
+  background:url(/static/loading12.gif) 50% 50% no-repeat rgb(15 10 10 /59%);
+  background-size:200px;
+  }
+</style>
+
+<div id='loader' style='display:none'></div>
+<div id='cID' style='display:none'>{{ clientID }}</div>
+<h4>Based on ICA/ICA and Cohort labels:</h4>
+<div id="tabs_advanced" style='width:1800px;'>
+  <ul>
+    <li><a href="#tabs-1">ICA and Cohort label</a></li>
+    <li><a href="#tabs-2">ICA</a></li>
+    <li><a href="#tabs-3">PCA</a></li>
+  </ul>
+  <div id="tabs-1">
+  	<table>
+  		<tr>
+  			<td>
+  				<p>Choose the cohort label for ICA: </p>
+			  	<select id='cohort' onchange='refresh01();'>
+						<option value='' selected='selected'>----SELECT----</option>
+						{% for label in root.labels %}
+    				    <option value="{{ label }}" title="{{ label }}">{{ label }}</option>
+    				    {% endfor %}
+				</select>
+			</td>
+			<td>
+					<p>Input number of Components:</p>
+			  	<input type='number' id='noComICA1' style='width:150px' min='5' step='1' value='7'/>
+			</td>
+		</tr>
+		<tr>
+		    <td>
+		        <p>Choose Label A:</p>
+		        <select id='cohort0'>
+						<option value='' selected='selected'>----SELECT----</option>
+				</select>
+				<label><input type='checkbox' id='bridge'> use as bridge</label>
+		    </td>	
+		    <td>
+		        <p>Choose Label B:</p>
+		        <select id='cohort1' onchange='cohort1_change();'>
+						<option value='' selected='selected'>----SELECT----</option>
+				</select>
+		    </td>
+		</tr>
+		</table>
+		<br>
+		<button class="btn btn-primary" onclick="run(1);">Run ICA</button>
+  </div>
+  <div id="tabs-2">
+  	    <table>
+  	        <tr>
+  	            <td>
+  	                <label>Input number of Components:</label><br>
+		        <input type='number' id='noComICA2' style='width:150px' min='5' step='1' value='7'/>
+		        </td>
+		        <td>
+		            <label><input id='icaIMF' type='checkbox'  value='yes'> Include IMF</label>
+		        </td>
+		    </tr>
+		</table>
+		<br><br>
+		<button class="btn btn-primary" onclick="run(2);">Run ICA</button>
+  </div>
+  <div id="tabs-3">
+  	    <table>
+  	        <tr>
+  	            <td>
+  	                <label>Input number of Components:</label><br>
+		            <input type='number' id='noComPCA' style='width:150px' min='5' step='1' value='7'/>
+		        </td>
+		        <td>
+		            <label><input id='pcaIMF' type='checkbox'  value='yes'> Include IMF</label>
+		        </td>
+		    </tr>
+		</table>
+		<br><br>
+		<button class="btn btn-primary" onclick="run(3);">Run PCA</button>
+  </div>
+</div>
+
+<script>
+$( function() {
+    $(document).tooltip();
+    tabs=$( "#tabs_advanced" );
+    tabs.tabs();
+});
+
+clientUniqueID= '{{ root.cID }}';
+
+function refresh01(){
+    label=$('#cohort').val();
+    url1 = '/meta/'+label+'/?cID='+ clientUniqueID;
+    $('#cohort0').html("<option value='' selected='selected'>----SELECT----</option>");
+    $('#cohort1').html("<option value='' selected='selected'>----SELECT----</option>");
+    $.ajax({
+			url:url1,
+			dataType:'json',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				if(response.length==0){
+					alert('No data');
+					return;
+				}
+				for (i=0;i<response.length;i++)
+				{
+				    $('#cohort0').append('<option value="'+encodeURIComponent(response[i])+'">'+response[i]+'</option>');
+				    $('#cohort1').append('<option value="'+encodeURIComponent(response[i])+'">'+response[i]+'</option>');
+			    }
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function cohort1_change()
+{
+    val1=$('#cohort0').val();
+    val2=$('#cohort1').val();
+    if(val1==val2)
+    {
+        alert('Label 0 == Label 1!');
+        $('#cohort1').val('');
+        return;
+    }
+}
+
+function run(num)
+{
+    imf='';
+    p0='';
+    p1='';
+    p=$('#cohort').val();
+    if(num==1)
+    {
+        var1='ica_cohort';
+        imf='no';
+        p0=$('#cohort0').val();
+        p1=$('#cohort1').val();
+        dim=$('#noComICA1').val();
+        bridge = $('#bridge').is(':checked') ? 'yes' : 'no';
+    }
+    else if(num==2)
+    {
+        var1='ica';
+        if($('#icaIMF').is(':checked'))
+        {
+            imf='yes';
+        }
+        else{
+            imf='no';
+        }
+        dim=$('#noComICA2').val();
+    }
+    else{
+        var1='pca';
+        if($('#pcaIMF').is(':checked'))
+        {
+            imf='yes';
+        }
+        else{
+            imf='no';
+        }
+        dim=$('#noComPCA').val();
+    }
+    if(num!=1){
+        if(imf=='yes')
+        {
+            window.open('report/?method='+var1+'&imf='+imf+'&dim='+dim+'&cID={{ root.cID }}','_blank');
+            return;
+        }
+        else{
+            $.ajax({
+			url:'report/?method='+var1+'&imf='+imf+'&dim='+dim+'&cID={{ root.cID }}',
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				alert('ICA successful!');
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+        }
+    }
+    p0=p0.replace(/[^a-zA-Z_]/g,'');
+    p1=p1.replace(/[^a-zA-Z_]/g,'');
+    if(p0==p1){
+        alert('Labels are too similar, please change values for them!');
+        return;
+    }
+    if(p0=='' || p1=='')
+    {
+        alert('Label value can\'t be empty!');
+        return;
+    }
+    else{
+        url1='report/?method=ica_cohort&p='+p+'&p0='+p0+'&p1='+p1+'&dim='+dim+'&bridge='+bridge+'&cID={{ root.cID }}';
+        $.ajax({
+			url:url1,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				alert('ICA successful!');
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+    }
+}
+</script>
+
+{% endblock %}

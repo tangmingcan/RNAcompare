@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div id='cID' style='display:none'>{{ clientID }}</div>
+<h4>{{ title }}</h4>
+
+<div style='display: flex; align-items: center; width: 1800px;'>
+    <!-- Embed the SVG directly -->
+    <img src="data:image/svg+xml;base64,{{ svg_content }}" alt="IMF Score Visualization" style='max-width: 1000px;'>
+</div>
+
+<br><br>
+<div>{{ message }}</div>
+
+{% endblock %}

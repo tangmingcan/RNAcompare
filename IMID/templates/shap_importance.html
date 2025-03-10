@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block body %}
+<style>
+#loader{
+  position:fixed;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:100%;
+  z-index:99999;
+  background:url(/static/loading12.gif) 50% 50% no-repeat rgb(15 10 10 /59%);
+  background-size:200px;
+  }
+</style>
+<div id='loader' style='display:none'></div>
+<div id='cID' style='display:none'>{{ clientID }}</div>
+<h4>SHAP Importance Visualization</h4>
+    
+    <!-- Embed the SVG directly -->
+    <div style='width:1800px;'>
+    <table>
+    <tr>
+        <td>
+            <img src="data:image/svg+xml;base64,{{ svg_content }}" alt="SHAP importance Visualization">
+        </td>
+        <td>
+            <label>Sorted by:</label>
+            <br>
+            <select id="imp_method">
+				<option value='abs' selected='selected'>abs mean</option>
+				<option value='width'>width</option>
+		    </select>
+		    <br><br>
+            <button style="margin-left: 20px; padding: 10px 15px;" class="btn btn-primary" onclick="downloadImp();">Download importance Data</button>
+        </td>
+    </tr>
+    </table>
+    <br><br>
+    <h4>SHAP Dependence Plot</h4>
+    
+    <!-- Input box displaying top 6 features -->
+    <label for="featureInput">Features:</label><br>
+    <input type="text" id="featureInput" style="width: 40%;" />
+
+    <!-- Button to trigger AJAX event -->
+    <button id="submitFeatures" class="btn btn-primary" onclick="loadInteraction();">See Dependence</button>
+    <br><br>
+    <div id='FeaInteraction'></div>
+</div>
+<script>
+    function loadInteraction(){
+        $('#FeaInteraction').html('');
+        val1=$('#featureInput').val().replace(/\s+/g, '');
+        if(val1=='')return;
+        url1="/ml/featureDependence/?param="+val1+"&cID={{ clientID }}";
+        $.ajax({
+        	url:url1,
+	        dataType:'json',
+	        cache:false,
+	        contentType:'application/json',
+	        processData:false,
+	        type:'get',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){
+        	    $('#FeaInteraction').html('<img src="data:image/svg+xml;base64,'+response.image+'" width="auto" height="300px"/>');
+        	},
+        	error:function(response){alert('Calculation Failed!');}
+        });
+    }
+    function downloadImp(){
+        num = $('#imp_method').val();
+	    url='/ml/featureImportance/data/?method='+num+'&cID={{ clientID }}';
+	    $('.btn').attr('disabled',true);
+	    
+	    $.ajax({
+	    		url:url,
+	    		dataType:'text',
+	    		cache:false,
+	    		contentType:false,
+	    		processData:false,
+	    		type:'get',
+	    		async:true,
+	    		beforeSend:function(){
+	    		$('#loader').show();
+	    		},
+	    		complete:function(){
+	    		$('#loader').hide();
+	    		},
+	    		success:function(response){
+	    			$('.btn').attr('disabled',false);
+	    			const blob = new Blob([response], { type: 'text/csv' });
+   	    			 // Create a link element to trigger the download
+	    			const link = document.createElement('a');
+	    			link.href = window.URL.createObjectURL(blob);
+	    			link.download = 'export.csv';
+	    			// Append the link to the document and trigger a click event
+	    			document.body.appendChild(link);
+	    			link.click();
+        
+	    			// Remove the link from the document
+	    			document.body.removeChild(link);
+	    		},
+	    		error:function(response){
+	    			alert(response.responseText);
+	    			$('.btn').attr('disabled',false);
+	    			return;
+	    		}
+	    });
+    }
+
+</script>
+{% endblock %}

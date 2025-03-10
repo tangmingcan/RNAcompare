@@ -1,0 +1,2223 @@
+{% extends 'base.html' %}
+
+{% block body %}
+  <script>
+  clientUniqueID=Math.random().toString(36).slice(-5);
+  clientUniqueID='12345';//for one user open multi-browsers
+  flag_open=0;
+  integrated=0;
+  label_selected_value='';
+  introFlag=1;
+  tourCompleted=false;
+  $('#next2EDA').attr('disabled', true);
+  $('.fi_btn').attr('disabled',true);
+  function startTour(){
+	introFlag=1;
+	$('#tabs').tabs('option', 'active', 0);
+	intro = introJs().setOptions({
+		steps:[{
+			title:'Welcome',
+			intro:"<div style='width:500px'> Welcome to RNAcompare, {{ user.get_username }}</div>"
+		},
+		{
+			element: document.querySelector('.first'),
+			intro:'You can upload your expression data files and meta data file here. You can skip this step and just use built-in ones in the next tab for trial.'
+		},
+		{
+			element: document.querySelector('#tooltip1'),
+			intro:'Anytime you have a question, just hover on it!'
+		},
+		{
+			element: document.querySelector('#upload1'),
+			intro:"Upload csv (bulked) RNA-seq Files, each file needs to include ID_REF",
+		},
+		{
+			element: document.querySelector('#upload2'),
+			intro:"Upload a csv meta-data File, each file needs to include ID_REF and LABEL, may include some clinic data(numeric)"
+		},
+		{
+			element: document.querySelector('#TemplateUpload'),
+			intro:'You can download the templates for upload here.'
+		},
+		{
+			element: document.querySelector('.second'),
+			intro:'You can combine different datasets including the selection of built-in ones, and define the data transformation and integration. For data transformation, you can pick log2, and feature reduction methods, like t-SNE, UMAP and PCA; For integration, the user can choose between Harmony and Combat. <b>Besides</b> It supports user\'s self-defined labels based on the clinical parameters after your integration. '
+		},
+		{
+			element: document.querySelector('#built-in-data'),
+			intro:'You can choose some of the built-in data here alone, or integrated with your previous uploaded data. Columns sharing the same column names will be retained.'
+		},
+		{
+			element: document.querySelector('#processOption'),
+			intro:'Choose options to process the data.'
+		},
+		{
+			element: document.querySelector('#next2'),
+			intro:'Click \'Processing\' button to process the data first.'
+		},
+		{
+			element: document.querySelector('#next2EDA'),
+			intro:'After processing the data, then click this to navigate to the next page.'
+		},
+		{
+			element: document.querySelector('#metaAdvancedSettingClick'),
+			intro:'Or, before navigating, you can create new labels based on the processed clinical data. In you uploaded clinical data, features with continous values can be used to create new labels here, features with categorical values will show as candidate labels directly, waiting for being activated.'
+		},
+		{
+			element: document.querySelector('.third'),
+			intro:'You can visualise the quality of the transformation and integration and download the processed data here'
+		},
+		{
+			element: document.querySelector('#VbOption'),
+			intro:'Choose the Value for coloring the processed data.'
+		},
+		{
+			element: document.querySelector('#tour'),
+			intro:'Or go back to this tour again.'
+		},
+	],
+	});
+	
+	intro.onchange(function(targetElement) {
+      if ($(targetElement).closest('.second').length) {
+        $('#tabs').tabs('option', 'active', 1); // Activate Tab 2
+      }
+	  else if ($(targetElement).closest('.third').length) {
+        $('#tabs').tabs('option', 'active', 2); // Activate Tab 3
+      }
+	  else if ($(targetElement).closest('.fourth').length) {
+        $('#tabs').tabs('option', 'active', 3); // Activate Tab 4
+      }
+	  else if ($(targetElement).closest('.fifth').length) {
+        $('#tabs').tabs('option', 'active', 4); // Activate Tab 5
+      }
+	  else if ($(targetElement).closest('.sixth').length) {
+        $('#tabs').tabs('option', 'active', 5); // Activate Tab 6
+      }
+	  else if ($(targetElement).closest('.seventh').length) {
+        $('#tabs').tabs('option', 'active', 6); // Activate Tab 7
+      }
+	  else if ($(targetElement).closest('#tour').length) {
+        $('#tabs').tabs('option', 'active', 0); // Activate Tab 1
+      }
+    });
+
+	intro.oncomplete(function() {
+    	tourCompleted = true; // Mark as completed
+	});
+
+	intro.onexit(function() {
+		if (!tourCompleted) {
+			introFlag=0;
+    	}
+	});
+
+	intro.start();
+  }
+  
+  document.addEventListener('DOMContentLoaded',function(){
+		startTour();
+  });
+  $( function() {
+	initDf();
+  $(document).tooltip();
+	$('#metaAdvancedSetting').fadeOut();
+    $('#FR_processed').prop('checked',false);
+	$('#my-select-label').multiSelect({ 
+		keepOrder: true,selectableHeader:'<div class="custom-header">Select for coloring</div>',
+		selectionHeader:'<div class="custom-header">Established Labels</div>'
+	});
+    tabs=$('#tabs');
+	tabs.tabs();
+	tabs_label=$('#tabs-label');
+	tabs_label.tabs();
+	$('#tabs-eda').tabs({
+		activate: function (event, ui) {
+			const tabId = ui.newPanel.attr("id");
+			if (tabId === "tabs-eda-2") {
+				$('#graphDiv11 .img1').each(function () {
+					// Ensure the image is visible and rendered
+					if (!$(this).data('wheelzoom-applied')) {
+							wheelzoom(this);
+							$(this).data('wheelzoom-applied', true);
+					}
+				});
+			}
+		}
+  	});
+  	
+  	$('#next2EDA').attr('disabled', false);
+
+	$('#tabs-5-ML').tabs();
+	$('#tabs-6-ca').tabs();
+	$('#tabs-7-meta').tabs();
+
+    $('#tab3div').hide();
+    $('#my-select').multiSelect({ keepOrder: true });
+    $('.downloadData1').hide();
+    $('#ml_class_val').val("<option value='' selected='selected'>----SELECT----</option>");
+    $('#ml_label_name').val("<option value='' selected='selected'>----SELECT----</option>");
+
+    $('#upload1').on('click',function(){
+		form_data=new FormData();
+		ins=document.getElementById('multiFiles').files.length;
+		if(ins==0){
+			$('#msg').html('<div class="alert-danger" role="alert">Select at least one file for Gene Expression</div>');
+			return;
+		}
+		else{
+		$('#msg').html('');
+		}
+		
+		for(var i=0;i<ins;i++){
+			form_data.append("files[]", document.getElementById('multiFiles').files[i]);
+		}
+		form_data.append('cID', clientUniqueID);
+		csrf_token=$('input[name="csrfmiddlewaretoken"]').val();
+		form_data.append("csrfmiddlewaretoken",csrf_token);
+		
+		$.ajax({
+			url: '/geneExpression/?cID='+clientUniqueID,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			data:form_data,
+			type:'post',
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('#preview1').html(response);
+				$('#preview2').html(' ');
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+			}
+		});
+	});
+	
+   $('#upload2').on('click',function(){
+		form_data=new FormData();
+		ins=document.getElementById('singleFile').files.length;
+		if(ins==0){
+			$('#msg').html('<div class="alert-danger" role="alert">Select at least one file for Meta-data</div>');
+			return;
+		}
+		else{
+		$('#msg').html('');
+		}
+		
+		form_data.append("meta", document.getElementById('singleFile').files[0]);
+		csrf_token=$('input[name="csrfmiddlewaretoken"]').val();
+		form_data.append("csrfmiddlewaretoken",csrf_token);
+		form_data.append('cID', clientUniqueID);
+		
+		$.ajax({
+			url: '/meta/?cID='+clientUniqueID,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			data:form_data,
+			type:'post',
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('#preview2').html(response);
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+			}
+		});
+	});
+	
+	
+   $('#next1').on('click',function(){	
+		tabs.tabs('option','active',1);
+	});
+   $('#next2').on('click',function(){
+   	$('.btn').attr('disabled',true);
+	url='/eda/integrate/?correct='+$('input[name="Comb"]:checked').val()+'&log2='+$('input[name="Log"]:checked').val()+'&fr='+$('input[name="FR"]:checked').val()+'&integrate='+$('#my-select').val();
+	url+='&cID='+clientUniqueID;
+		$.ajax({
+			url: url,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+				$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				alert('Data Process successful.');
+				$('#my-select-label-numeric').html("<option value='' selected='selected'>----SELECT----</option>");
+				$('#my-select-label-delete').html("<option value='' selected='selected'>----SELECT----</option>");
+				$('#label-numeric-input').val('');
+				$('#label-numeric-input-texts').val('');
+				$('#eda-label-choose').val("<option value='batch2' selected='selected'>LABEL</option>");
+				$('#next2EDA').attr('disabled', false);
+
+				$('#tab3div').hide();
+				$('#targetGene').val('');
+
+				if ($.fn.DataTable.isDataTable('#metagenes_table')) {
+					$('#metagenes_table').DataTable().destroy();
+				}
+				$('#metagenes_table').html('');
+				integrated=1;
+				if(flag_open==1){
+					metaAdvanced();
+				}
+			},
+			error:function(response){
+				alert(response.responseText);$('#loader').hide();
+				$('.btn').attr('disabled',false);
+				return;
+			}
+		});
+		$('.btn').attr('disabled',false);
+	});
+
+   $('#next2EDA').on('click',function(){
+	orig_label=$('#eda-label-choose').val();
+	url='/eda/?cID='+clientUniqueID;
+	url+='&label='+$('#eda-label-choose').val();
+
+	$.ajax({
+			url: url,
+			dataType:'json',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			success:function(response){
+				$('#tab3div').show();
+				tabs.tabs('option','active',2);
+				dfs1 = response.dfs1;
+				plotlyPlot('graphDiv1',dfs1,response.method);
+				$('.btn').attr('disabled',false);
+				dfs2 = response.dfs2;
+				plotlyPlot('graphDiv2',dfs2,response.method);
+				$('#eda-label-choose').html('');
+				$('#ml_label_name').html("<option value='' selected='selected'>----SELECT----</option>");
+				refresh_ca();
+				
+				for(i=0;i<response.labels.length;i++)
+				{
+					temp_r=response.labels[i];
+					if(temp_r=='LABEL')temp_r='batch2';
+					if(temp_r==orig_label){
+						$('#eda-label-choose').append("<option value='"+temp_r+"' selected='selected'>"+response.labels[i]+"</option>");
+					}
+					else{
+						$('#eda-label-choose').append("<option value='"+temp_r+"'>"+response.labels[i]+"</option>");
+						
+					}
+				}	
+				$.ajax({
+					url: '/dgea/?cID='+clientUniqueID+'&label='+$('#eda-label-choose').val(),
+					dataType:'json',
+					cache:false,
+					contentType:false,
+					processData:false,
+					type:'get',
+					async:true,
+					complete:function(){
+						$('#loader').hide();
+					},
+					success:function(response){
+						$('#graphDiv11A').attr('href','data:image/svg+xml;base64,'+response[0]);
+						$('#graphDiv21A').attr('href','data:image/svg+xml;base64,'+response[1]);
+						$('#graphDiv11').html('<img class="img1" src="data:image/svg+xml;base64,'+response[0]+'" width="auto" height="400px"/>');
+						$('#graphDiv21').html('<img class="img1" src="data:image/svg+xml;base64,'+response[1]+'" width="auto" height="400px"/>');
+						alert('Calculation Succeed!');
+						
+						$('#tabs-eda').tabs('option', 'active', 0)
+						$('#graphDiv21 .img1').each(function () {
+							wheelzoom(this);
+						});		
+					},
+					error:function(response){
+						alert(response.responseText);$('#loader').hide();
+						$('.btn').attr('disabled',false);
+						$('#graphDiv11').html('');
+						$('#graphDiv21').html('');
+						$('#graphDiv11A').attr('href','...');
+						$('#graphDiv21A').attr('href','...');
+						return;
+					}
+				});
+	
+			},
+			error:function(response){
+				alert(response.responseText);$('#loader').hide();
+				$('.btn').attr('disabled',false);
+				return;
+			}
+		});
+		$('.btn').attr('disabled',false);
+	});
+
+   $('#next3').on('click',function(){
+		tabs.tabs('option','active',3);
+	});
+   $('#next4').on('click',function(){
+		tabs.tabs('option','active',4);
+	});
+
+  });
+
+function initDf(){
+	$('#preview1').html('');
+	$('#preview2').html('');
+	$.ajax({
+			url: '/geneExpression/?cID='+clientUniqueID,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('#preview1').html(response);
+			},
+			error:function(response){
+				alert(response.responseText);
+			}
+	});
+
+	$.ajax({
+			url: '/meta/?cID='+clientUniqueID,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('#preview2').html(response);
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+			}
+		});
+}
+  
+  
+function unpack(rows,n){
+	return rows.map(function(row)
+	{return row[n];});}
+	
+function plotlyPlot(idP,dfsP,method){
+	data=[];
+	sequentialScale=d3.scaleSequential().domain([0,Object.keys(dfsP).length]).interpolator(d3.interpolateRainbow);
+	i=0;
+	for(const [key,value] of Object.entries(dfsP)){
+		var trace={
+		x:unpack(value.data, 0), y: unpack(value.data, 1),
+		mode: 'markers',
+		marker: {
+			size: 10,color:sequentialScale(i),
+			symbol:'circle',
+			opacity: 0.5},
+		type: 'scatter',
+		name: key,
+		text: value.obs,
+		};
+		data.push(trace);
+		i++;
+	}
+	var layout = {
+		legend:{
+	  	x:1,
+	  	y:0.5,
+		itemsizing: 'constant',
+	  	},
+		  xaxis: {
+            title: method + '1', // Dynamic x-axis name
+        },
+        yaxis: {
+            title: method + '2', // Dynamic y-axis name
+        },
+	  };
+	var config={
+		toImageButtonOptions:{
+			format:'svg',
+			filename:'download',
+			scale:'1'
+		}
+	};
+	Plotly.newPlot(idP, data, layout, config);
+}
+
+function plotlyPlot1(idP,dfsP){
+	data=[];
+	sequentialScale=d3.scaleSequential().domain([0,Object.keys(dfsP).length]).interpolator(d3.interpolateRainbow);
+	i=0;
+	for(const [key,value] of Object.entries(dfsP)){
+		var trace={x:value.x,y:value.y,name:value.name,type:value.type,marker:{color:sequentialScale(i)}};
+		data.push(trace);
+		i++;
+	}
+	layout={barmode:'stack'};
+	var config={
+		toImageButtonOptions:{
+			format:'svg',
+			filename:'download',
+			scale:'1'
+		}
+	};
+	Plotly.newPlot(idP, data, layout, config);
+}
+
+
+
+function getMetagenes(){
+	url='/ica/metagenes/';
+	url+='?cID='+clientUniqueID;
+	$('.btn').attr('disabled',true);
+	$.ajax({
+			url:url,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				const blob = new Blob([response], { type: 'text/csv' });
+   				 // Create a link element to trigger the download
+				const link = document.createElement('a');
+				link.href = window.URL.createObjectURL(blob);
+				link.download = 'export.csv';
+				// Append the link to the document and trigger a click event
+				document.body.appendChild(link);
+				link.click();
+
+				// Remove the link from the document
+				document.body.removeChild(link);
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function getTopGenes(t){
+	url='';
+	if(t==1){
+		url='/dgea/?clusters=fileName&topN=0';
+	}
+	else if(t==2){
+		url='/dgea/?clusters=label&topN=0';
+	}
+	else if(t==3){
+		url='/dgea/?clusters='+$('input[type=radio][name=clustering]:checked').val()+'&topN=0';//LEIDEN,HDBSCAN,Kmeans
+	}
+	else if(t==4){
+		url='/processedFile/corrected/?usr={{ user.get_username }}';
+	}
+	else if(t==5){
+		url='/processedFile/correctedCluster/?usr={{ user.get_username }}';
+	}
+	url+='&label='+$('#eda-label-choose').val();
+	url+='&cID='+clientUniqueID;
+	$('.btn').attr('disabled',true);
+	$.ajax({
+			url:url,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				const blob = new Blob([response], { type: 'text/csv' });
+   				 // Create a link element to trigger the download
+				const link = document.createElement('a');
+				link.href = window.URL.createObjectURL(blob);
+				link.download = 'export.csv';
+				// Append the link to the document and trigger a click event
+				document.body.appendChild(link);
+				link.click();
+
+				// Remove the link from the document
+				document.body.removeChild(link);
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function getSep()
+{
+	sep=$('#separator').val();
+	if(sep=='Space')sep=' ';
+	else if(sep=='Return')sep='\n';
+	else if(sep=='Comma')sep=',';
+	else if(sep=='Tab')sep='\t';
+	else sep=';';
+	return sep;
+}
+
+
+//label_selected_value='';
+function metaAdvanced()
+{
+	txt=$('#metaAdvancedSettingClick').html();
+	flag=0;
+	$('.btn').attr('disabled',true);
+	if(integrated==0&&txt=='&gt;&gt;Enable Meta File Advanced Settings'){
+		url='/user/?cID='+clientUniqueID;
+		$.ajax({
+			url:url,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			success:function(response){
+				$('.btn').attr('disabled',false);
+			},
+			error:function(response){
+				$('.btn').attr('disabled',false);
+				alert('Please Integrate/Process the data first.');
+				flag=1;
+			}
+		});
+		
+	}
+	if(flag==1)return;
+	if(txt=='&gt;&gt;Enable Meta File Advanced Settings')
+	{
+		$('#metaAdvancedSettingClick').html('&gt;&gt;Close Meta File Advanced Settings');
+		$('#metaAdvancedSetting').slideToggle(300);
+		flag_open=1;
+	}
+	else
+	{
+		$('#metaAdvancedSettingClick').html('&gt;&gt;Enable Meta File Advanced Settings');
+		$('#metaAdvancedSetting').slideToggle(300);
+		flag_open=0;
+		$('.btn').attr('disabled',false);
+		return;
+	}
+	refreshMySelectLabel();
+	
+}
+
+function refreshMySelectLabel()
+{
+	url='/meta/columns/?param=1&';
+	url+='cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'json',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			$('.btn').attr('disabled',true);
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				$('#my-select-label').html('');
+				$('#my-select-label-numeric').html("<option value='' selected='selected'>----SELECT----</option>");
+				for (i=0;i<response.length;i++)
+				{
+					colName=response[i][0];
+					labeled=response[i][1];
+					numeric=response[i][2];
+					if(numeric=='0'){
+						if(labeled=='0'){
+							if(colName!='ID_REF') $('#my-select-label').append('<option value="'+colName+'">'+colName+'</option>');
+							else $('#my-select-label').append('<option value="'+colName+'" disabled="">'+colName+'</option>');
+
+						}
+						else{
+							if(colName!='LABEL'){
+								$('#my-select-label').append('<option value="'+colName+'" selected="">'+colName+'</option>');
+							}
+							else{
+								$('#my-select-label').append('<option value="batch2" selected="" disabled="" index="0">'+colName+'</option>');
+								
+							}
+						}
+					}
+					else{
+						$('#my-select-label-numeric').append('<option value="'+colName+'">'+colName+'</option>');
+					}
+				}
+				$('#my-select-label').multiSelect('refresh');
+				label_selected_value=$('#my-select-label').val();
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function refreshMyDeleteLabel()
+{
+	url='/meta/columns/?';
+	url+='cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'json',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			$('.btn').attr('disabled',true);
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				$('#my-select-label-delete').html("<option value='' selected='selected'>----SELECT----</option>");
+				for (i=0;i<response.length;i++)
+				{
+					colName=response[i][0];
+					labeled=response[i][1];
+					numeric=response[i][2];
+					if(numeric=='0'&&labeled=='0'&&colName!='ID_REF'&&(colName.indexOf("__crted") != -1)){
+						$('#my-select-label-delete').append('<option value="'+colName+'">'+colName+'</option>');
+					}
+
+				}	
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+function labelAssignConfirm()
+{
+	if($('#my-select-label').val()==''&&label_selected_value==''){
+		alert('Select at least one categorical field as a new label.');
+		return;
+	}
+	if($('#my-select-label').val()==label_selected_value){
+		alert('Didn\'t change anything.');
+		return;
+	}
+	url='/meta/columns/?';
+	url+='labels='+$('#my-select-label').val()+'&fr='+$('input[name="FR"]:checked').val();
+	url+='&cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'json',
+			headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'put',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			$('.btn').attr('disabled',true);
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				alert('Update new label(s) successfully.');
+				label_selected_value=$('#my-select-label').val();
+				$('#eda-label-choose').val('batch2');
+				refreshMyDeleteLabel();
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function numLabelChange()
+{
+	colName=$('#my-select-label-numeric').val();
+	if(colName=='')return;
+	url='/meta/'+colName+'/?';
+	url+='cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'text',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			$('.btn').attr('disabled',true);
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				$('#numLabelPlot').html('<img src="data:image/svg+xml;base64,'+response+'" width="auto" height="600px"/>');
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function labelNumericConfirm()
+{
+	inp=$('#label-numeric-input').val();
+	text=$('#label-numeric-input-texts').val();
+	colName=$('#my-select-label-numeric').val();
+	if(colName==''){
+		alert('Please choose a field.');
+		return;
+	}
+	pattern = /^(\d+(\.\d+)?)(,\d+(\.\d+)?)*$/;
+	if(!pattern.test(inp))
+	{
+		alert('Illegal input for threshold(s). Correct format case: 3.5,4.75');
+		return;
+	}
+	pattern =/^[^,]+(?:,[^,]+)*$/;
+	if(!pattern.test(text))
+	{
+		alert('Illegal input for values for threshold(s). Correct format case: A,B,C');
+		return;
+	}
+	inp=inp.split(',');
+	text=text.split(',');
+	if(text.length!=inp.length+1)
+	{
+		alert('Mismatched number of labels. Expected: ' + (inp.length+1));
+		return;
+	}
+	url='/meta/columns/?';
+	url+='cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'text',
+			cache:false,
+			data:JSON.stringify({
+				'colName':colName,
+				'thredshold':inp,
+				'thredshold_labels':text
+			}),
+			headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+			contentType:'application/json',
+			processData:false,
+			type:'post',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			$('.btn').attr('disabled',true);
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				alert('Label Created Successfully.');
+				$('#numLabelPlot').html('');
+				$('#label-numeric-input').val('');
+				$('#label-numeric-input-texts').val('');
+				$('#my-select-label-numeric').val('');
+				refreshMySelectLabel();			
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function labelDeleteConfirm()
+{
+	value=$('#my-select-label-delete').val();
+	if(value=='')return
+	url='/meta/'+value+'/';
+	url+='?cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'text',
+			cache:false,
+			headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+			contentType:'application/json',
+			processData:false,
+			type:'delete',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			$('.btn').attr('disabled',true);
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				alert('Label Deleted Successfully.');
+				refreshMySelectLabel();
+				refreshMyDeleteLabel();		
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+function edaLabelChange()
+{
+	$('#next2EDA').trigger('click');
+}
+
+function label_name_change(targetLabel,targetClusterNum)
+{
+	if($('#'+targetLabel).val()=='')return;
+	url='/meta/'+$('#'+targetLabel).val()+'/';
+	url+='?cID='+clientUniqueID;
+	$.ajax({
+			url:url,
+			dataType:'json',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				$('#'+targetClusterNum).html("<option value='' selected='selected'>----SELECT----</option>");
+				for (i=0;i<response.length;i++){
+					$('#'+targetClusterNum).append(new Option(response[i],response[i]));
+				}
+				
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				return;
+			}
+	});
+}
+
+MetageneResponse = '';
+function refreshMetagenes() {
+    $('#metagene-cohort-select').html("<option value='' selected='selected'>----SELECT----</option>");
+    $('#metagene-select1').html("<option value='' selected='selected'>----SELECT----</option>");
+    $('#metagene-select2').html("<option value='' selected='selected'>----SELECT----</option>");
+    url1='compType/ICA/ica_all/?cID='+clientUniqueID;
+    $.ajax({
+			url:url1,
+			dataType:'json',
+			cache:false,
+			contentType:'application/json',
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){	
+			    if(response.ica_cohort.length!=0){
+			        $('#tabs-7-meta').tabs('option', 'active', 0);
+			        $('#metagene-cohort-select').append("<option value='A'>" + response.ica_cohort[1] + "</option>");
+			        $('#metagene-cohort-select').append("<option value='B'>" + response.ica_cohort[2] + "</option>");
+			        MetageneResponse=response;
+			    }
+			    else{
+			        $('#tabs-7-meta').tabs('option', 'active', 1);
+			        temp = response.ica_cohort_metagenes[0];
+			        for(i=0;i<temp.length; i++)
+			        {
+			            $('#metagene-select2').append("<option value='" + temp[i] + "'>" + temp[i] + "</option>");
+			        }
+			    }
+			},
+			error:function(response){
+				alert('Fetching metagenes failed.');
+				return;
+			}
+	});
+}
+function showCohortMetagene(){
+    var1 = $('#metagene-cohort-select').val();
+    if(var1=='')return;
+    $('#metagene-select1').html("<option value='' selected='selected'>----SELECT----</option>");
+    if(var1=='A'){
+        temp = MetageneResponse.ica_cohort_metagenes[0];
+    }
+    else{
+        temp = MetageneResponse.ica_cohort_metagenes[1];
+    }
+    for(i=0;i<temp.length; i++)
+    {
+        $('#metagene-select1').append("<option value='" + temp[i] + "'>" + temp[i] + "</option>");
+    }
+    
+}
+
+function goMetagenes(n)
+{
+    if(n==1) selectedValue = $('#metagene-select1').val();
+    else selectedValue = $('#metagene-select2').val();
+    if(selectedValue=='') return;
+    cohort = $('#metagene-cohort-select').val();
+    if(n==1) url='/goenrich/?cohort='+cohort+'&metagene='+selectedValue;
+    else url='/goenrich/?metagene='+selectedValue;
+	url+='&cID='+clientUniqueID;
+	// If table already exists, destroy it first
+	if ($.fn.DataTable.isDataTable('#metagenes_table')) {
+    $('#metagenes_table').DataTable().destroy();}
+	$('#metagenes_table').html('');
+	$.ajax({
+			url:url,
+			dataType:'json',
+			cache:false,
+			contentType:false,
+			processData:false,
+			type:'get',
+			async:true,
+			beforeSend:function(){
+			$('#loader').show();
+			},
+			complete:function(){
+			$('#loader').hide();
+			},
+			success:function(response){
+				$('.btn').attr('disabled',false);
+				if(response.data.length==0){
+					alert('No Pathway found!');
+					$('#metagenes_table').html('');
+					return;
+				}
+				table = new DataTable('#metagenes_table', {
+					data: response.data,
+					columns: [
+						{ data: 'Category', title:'Category'},
+						{ data: 'ID', title:'ID' },
+						{ data: 'Name', title:'Name' },
+						{ data: 'PValue', title:'PValue' },
+						{ data: 'Gene_Symbol', title:'Gene_Symbol' }
+					],
+					columnDefs: [ {
+						targets: 4,
+						render: function ( data, type, row ) {
+							if (type === 'display') {
+								return data.substr(0, 30) + '...';
+							}
+							return data;
+						}
+					} ],
+					order: [],
+					layout: {
+						topStart: {
+							buttons: [
+								{
+									extend:'csv',
+									text:'Download as CSV',
+									filename:'topFunEnrichment',
+									exportOptions: {
+										orthogonal: 'export'
+									}
+								}
+							]
+						}
+					}
+				});
+			},
+			error:function(response){
+				alert(response.responseText);
+				$('.btn').attr('disabled',false);
+				$('#metagenes_table').html('');
+				return;
+			}
+	});
+}
+function ml_hideclasORregres(){mml_list_label('');}
+
+function dml_list_label(){mml_list_label('d');}
+
+function mml_list_label(d){
+    hcORr = $('#'+d+'ml_clasORregres').val();
+    $('#'+d+'ml_label_name').html("<option value='' selected='selected'>----SELECT----</option>");
+    $('#'+d+'ml_class_val').html("<option value='' selected='selected'>----SELECT----</option>");
+    if(hcORr=='')return;
+    if(hcORr=='regression'){
+        $('#'+d+'ml_cate4ML').hide();
+        $('#'+d+'ml_num4ML').show();
+        getColumnNames('1').then(function(response){
+            for(i=0;i<response.length;i++)
+		    {
+		        $('#'+d+'ml_label_name').append('<option value="'+response[i][0]+'">'+response[i][0]+'</option>');
+		    }
+        })
+        .catch(function(error){
+            alert('Error: '+error);
+        });
+
+    }
+    else{
+        $('#'+d+'ml_cate4ML').show();
+        $('#'+d+'ml_num4ML').hide();
+        getColumnNames('0').then(function(response){
+            for(i=0;i<response.length;i++)
+		    {
+		        if(response[i][1]=='0')continue;//only label
+		        $('#'+d+'ml_label_name').append('<option value="'+response[i][0]+'">'+response[i][0]+'</option>');
+		    }
+        })
+        .catch(function(error){
+            alert('Error: '+error);
+        });
+        
+    }
+}
+
+function ml_label_name_change(){mml_label_name_change('');}
+function dml_label_name_change(){
+    if($('#dml_label_name').val()==$('#dml_batch').val())
+    {
+        alert('batch can\'t be used as label!');
+        $('#dml_label_name').val('');
+        return;
+    }
+    mml_label_name_change('d');
+}
+function mml_label_name_change(d){
+    name = $('#'+d+'ml_label_name').val();
+    if($('#'+d+'ml_clasORregres').val()=='regression')return;
+    $('#'+d+'ml_class_val').html("<option value='' selected='selected'>----SELECT----</option>");
+    if(name=='')return;
+    getColumnValues(name).then(function(response){
+            for(i=0;i<response.length;i++)
+		    {
+		        $('#'+d+'ml_class_val').append('<option value="'+response[i]+'">'+response[i]+'</option>');
+		    }
+    })
+    .catch(function(error){
+            alert('Error: '+error);
+    });
+}
+ca_Y_global={};
+function refresh_ca(){
+    ca_Y_global={};
+    $('#ca-asT').html("<option value='' selected='selected'>----SELECT----</option>");
+    $('#ca-asY').html("<option value='' selected='selected'>----SELECT----</option>");
+    getColumnNames('').then(function(response){
+        for(i=0;i<response.length;i++)
+        {
+            if(response[i][0]=='ID_REF')continue;
+            if(response[i][2]=='0')
+            {
+                $('#ca-asT').append('<option value="'+response[i][0]+'">'+response[i][0]+'</option>');
+            }
+            $('#ca-asY').append('<option value="'+response[i][0]+'">'+response[i][0]+'</option>');
+            ca_Y_global[response[i][0]]=response[i][2];//0-String, 1-Numeric
+        }
+    })
+    .catch(function(error){
+            alert('Error: '+error);
+    });
+}
+
+function ca_T_change(){
+    val1 = $('#ca-asT').val();
+    if(val1==''){$('#ca-TType').val('');return;}
+    getColumnValues(val1).then(function(response){
+        $('#ca-TInterest').html("<option value='' selected='selected'>----SELECT----</option>");
+        for(i=0;i<response.length;i++)
+        {
+            $('#ca-TInterest').append('<option value="'+response[i]+'">'+response[i]+'</option>');
+        }
+    })
+    .catch(function(error){
+            alert('Error: '+error);
+    });
+}
+
+function ca_Y_change(){
+    val1 = $('#ca-asY').val();
+    if(val1==''){$('#ca-YType').val('');return;}
+    val2 = ca_Y_global[val1];
+    if(val2 == '0')
+    {
+        if(val1==$('#ca-asT').val()){
+            alert('Y can not be the same as T!');
+            $('#ca-asY').val('');
+            return;
+        }
+        $('#ca-YInterest').show();
+        $('#ca-YType').val('classification');
+        getColumnValues(val1).then(function(response){
+        $('#ca-YInterest').html("<option value='' selected='selected'>----SELECT----</option>");
+        for(i=0;i<response.length;i++)
+        {
+            $('#ca-YInterest').append('<option value="'+response[i]+'">'+response[i]+'</option>');
+        }
+    })
+    .catch(function(error){
+            alert('Error: '+error);
+    });
+    }
+    else
+    {
+        $('#ca-YType').val('regression');
+        $('#ca-YInterest-div').hide();   
+        $('#ca-Ylog-div').show(); 
+    }
+}
+
+function getColumnNames(numeric){//0-String,1-Numeric,empty-all
+    if(numeric=='') url='/meta/columns/?param=2&cID='+clientUniqueID;
+    else url='/meta/columns/?param=2&numeric='+numeric+'&cID='+clientUniqueID;
+    return new Promise(function(resolve, reject){
+        $.ajax({
+        	url:url,
+	        dataType:'json',
+	        cache:false,
+	        contentType:false,
+	        processData:false,
+	        type:'get',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){resolve(response);},
+        	error:function(xhr, status, error){reject(error);}
+        });
+    });
+}
+
+function getColumnValues(name){
+    url='/meta/'+name+'/';
+    url+='?cID='+clientUniqueID;
+    return new Promise(function(resolve, reject){
+        $.ajax({
+        	url:url,
+	        dataType:'json',
+	        cache:false,
+	        contentType:false,
+	        processData:false,
+	        type:'get',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){resolve(response);},
+        	error:function(xhr, status, error){reject(error);}
+        });
+    });
+}
+
+function goML(val,num,d)
+{
+    if(val=='rf')cati='rf';
+    else if(val=='xgb')cati='xgb';
+    else cati='lightgbm';
+    mlType =$('#'+d+'ml_clasORregres').val();
+    mlLabel =$('#'+d+'ml_label_name').val().replace(/[^a-zA-Z_0-9]/g,'');
+    if(mlType=='classification')
+    {
+        value = $('#'+d+'ml_class_val').val().replace(/[^a-zA-Z_0-9]/g,'');
+    }
+    else{
+        value = $('#'+d+'ml_logY').val().replace(/[^a-zA-Z_0-9]/g,'');;
+    }
+    mlTestRatio =$('#'+d+'ml_testRatio'+num).val();
+    mlP = $('#'+d+'ml_p'+num).val().replace(/\s+/g, '');
+    drop = parseFloat($('#'+d+'ml_drop').val());
+
+    if(mlType=='classification'){
+        if(d=='')url1='ml/classification/'+cati+'/?cID='+clientUniqueID+'&label='+mlLabel+'&class='+value+'&testRatio='+mlTestRatio;
+        else url1='dml/classification/'+cati+'/'+num+'/?cID='+clientUniqueID+'&label='+mlLabel+'&class='+value+'&testRatio='+mlTestRatio;
+        $.ajax({
+        	url:url1,
+	        dataType:'json',
+	        cache:false,
+	        contentType:'application/json',
+	        processData:false,
+	        headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+	        data: JSON.stringify({ 'ml_params': mlP, 'drop':drop }),
+	        type:'post',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){
+        	    alert('AUC for test is: '+response.result);
+        	    $('.fi_btn').attr('disabled',false);
+        	},
+        	error:function(response){alert('Calculation Failed! '+response.responseText);$('.fi_btn').attr('disabled',true);}
+        });
+    }
+    else{
+        if(d=='')url1='ml/regression/'+cati+'/?cID='+clientUniqueID+'&label='+mlLabel+'&logY='+value+'&testRatio='+mlTestRatio;
+        else url1='dml/regression/'+cati+'/'+num+'/?cID='+clientUniqueID+'&label='+mlLabel+'&logY='+value+'&testRatio='+mlTestRatio;
+        $.ajax({
+        	url:url1,
+	        dataType:'json',
+	        cache:false,
+	        contentType:'application/json',
+	        processData:false,
+	        headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+	        data: JSON.stringify({ 'ml_params': mlP, 'drop':drop }),
+	        type:'post',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){alert('MSE for test is: '+response.result);$('.fi_btn').attr('disabled',false);},
+        	error:function(response){alert('Calculation Failed! '+response.responseText);$('.fi_btn').attr('disabled',true);}
+        });
+    }
+}
+
+function goDML(target,num){
+    if($('#dml_batch').val()==$('#dml_label_name').val())
+    {
+        alert('Batch Name can\'t be same as selected Label.');
+        return;
+    }
+    val=$(target).val()
+    goML(val,num,'d');
+}
+
+function showIm(num){
+    if(num==0){
+        value1 = $('#flipShap').is(':checked') ? 'yes' : 'no';
+        window.open('ml/featureImportance/?flip='+value1+'&cID='+clientUniqueID);
+    }
+    else window.open('dml/featureImportance/'+num+'/?cID='+clientUniqueID);
+}
+function auto_fill_mlP(){
+    defaults = {
+        "ML1": "n_estimators=500,max_depth=10,min_samples_split=5",
+        "ML2": "n_estimators=800,max_depth=6,learning_rate=0.1",
+        "ML3": "n_estimators=800,max_depth=6,learning_rate=0.1"
+    };
+    activeTab = $('#tabs-5-ML ul li.ui-tabs-active a').attr('id');
+    $('#ml_p').val(defaults[activeTab]);
+}
+function auto_fill_P(id1,id2){
+    defaults = {
+        "":"",
+        "rf": "n_estimators=500,max_depth=10,min_samples_split=5",
+        "xgb": "n_estimators=800,max_depth=6,learning_rate=0.1",
+        "lightgbm": "n_estimators=800,max_depth=6,learning_rate=0.1"
+    };
+    $(id2).val(defaults[$(id1).val()]);
+}
+function initDML(){
+    $.ajax({
+        	url:'compType/ICA/ica_cohort/?cID='+clientUniqueID,
+	        dataType:'json',
+	        cache:false,
+	        contentType:false,
+	        processData:false,
+	        type:'get',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){
+        	    val1 =response.text[0];
+        	    if(val1=='batch2')val1='LABEL';
+        	    $('#dml_batch').val(val1);
+        	    $('#dml_batch1').val(response.text[1]);
+        	    $('#dml_batch2').val(response.text[2]);
+        	    $('.fi_btn').attr('disabled',false);
+        	},
+        	error:function(response){
+        	    alert('Please run ICA by cohorts first!');
+        	    $('.fi_btn').attr('disabled',true);
+        	    $('#dml_batch').val('');
+        	    $('#dml_batch1').val('');
+        	    $('#dml_batch2').val('');
+        	}
+        });
+}
+function auto_fill_cfp(){
+    $('#cf_p').val('min_samples_leaf=5,max_depth=10,cv=5');
+}
+function run_cf1(){
+    val3 = $('#cf_use_ica_cohort').is(':checked') ? '1' : '0';
+    url1='cf/report/TYmodels/?cID='+clientUniqueID;
+    drop = parseFloat($('#ca_drop').val());
+    msg ={
+        'T_label':$('#ca-asT').val(),
+        'T_interest':$('#ca-TInterest').val(),
+        'T_model':$('#ca-Tmod').val(),
+        'T_p':$('#ca-Tp').val().replace(/\s+/g, ''),
+        'Y_label':$('#ca-asY').val(),
+        'Y_type':$('#ca-YType').val(),
+        'Y_interest':$('#ca-YInterest').val(),
+        'Y_log':$('#ca-Ylog').val(),
+        'Y_model':$('#ca-Ymod').val(),
+        'Y_p':$('#ca-Yp').val().replace(/\s+/g, ''),
+        'testRatio':$('#cf-testRatio').val(),
+        'use_ICAcohort':val3,
+        'drop':drop
+    };
+    $.ajax({
+        	url:url1,
+	        dataType:'text',
+	        cache:false,
+	        contentType:'application/json',
+	        processData:false,
+	        headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+	        data: JSON.stringify(msg),
+	        type:'post',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){
+        	    var newWindow = window.open();
+                newWindow.document.write(response);
+                newWindow.document.close(); 
+        	    },
+        	error:function(response){alert('Calculation Failed! '+response.responseText);}
+        });
+}
+function run_cf2(){
+    val1=$('#cf_n_estimators').val().replace(/[^0-9]/g,'');
+    val2=$('#cf_p').val().replace(/\s+/g, '');
+    val1='n_estimators='+val1+','+val2;
+    url1='cf/report/causalForests/?cID='+clientUniqueID;
+    val3 = $('#cf_use_ica_cohort').is(':checked') ? '1' : '0';
+    drop = parseFloat($('#ca_drop').val());
+    msg ={
+        'T_label':$('#ca-asT').val(),
+        'T_interest':$('#ca-TInterest').val(),
+        'cf_params':val1,
+        'testRatio':$('#cf-testRatio').val(),
+        'Y_label':$('#ca-asY').val(),
+        'Y_type':$('#ca-YType').val(),
+        'Y_interest':$('#ca-YInterest').val(),
+        'Y_log':$('#ca-Ylog').val(),
+        'use_ICAcohort':val3,
+        'drop':drop
+    };
+    $.ajax({
+        	url:url1,
+	        dataType:'text',
+	        cache:false,
+	        contentType:'application/json',
+	        processData:false,
+	        headers: {'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
+	        data: JSON.stringify(msg),
+	        type:'post',
+	        async:true,
+	        beforeSend:function(){$('#loader').show();},
+	        complete:function(){$('#loader').hide();},
+        	success:function(response){
+        	    var newWindow = window.open();
+                newWindow.document.write(response);
+                newWindow.document.close(); 
+        	    },
+        	error:function(response){alert('Calculation Failed! '+response.responseText);}
+        });
+}
+
+  </script>
+  
+  <style>
+  #loader{
+  position:fixed;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:100%;
+  z-index:99999;
+  background:url(/static/loading12.gif) 50% 50% no-repeat rgb(15 10 10 /59%);
+  background-size:200px;
+  }
+  .rotated{
+  transform:rotate(90deg);
+  }
+
+  </style>
+  
+<div id='loader' style='display:none'></div>
+<div id="tabs" style='width:1800px;'>
+  <ul>
+    <li><a href="#tabs-1" class="first">Data Collection</a></li>
+    <li><a href="#tabs-2" class="second">Data Processing</a></li>
+    <li><a href="#tabs-3" class="third">EDA</a></li>
+    <li><a href="#tabs-4" class="fourth">Cohort Comparison</a></li>
+    <li><a href='#tabs-5' class="fifth">Association Analysis</a></li>
+	<li><a href='#tabs-8' class="eighth" onclick="initDML();">Double ML Analysis</a></li>
+	<li><a href='#tabs-6' class="sixth" >Causal Analysis</a></li>
+    <li><a href="#tabs-7" class="seventh" onclick="refreshMetagenes();">Enrichment Analysis</a></li>
+  </ul>
+  <div id="tabs-1">
+    <fieldset name="Multiple Files Upload">
+    <div id="msg"></div>
+    <p>Upload Gene Expression files&nbsp;<img id='tooltip1'class='question' title="In this section, users upload their files(multiple). File names will be used for later visualisation. ID_REF is a compulsory field for each file.<p><img src='/static/fileUpload.png' width='500' height='auto'/></p>"/>&nbsp;&nbsp;&nbsp;
+		<button class="btn btn-primary" id='TemplateUpload' onclick="window.location.href='/static/template.zip'">Download Templates for Upload</button> &nbsp;&nbsp;&nbsp;
+		<button id="advancedSearch" class="btn btn-primary" onclick="window.open('/advancedSearch/?cID='+clientUniqueID);" title="This is used for processing any online data. User can search for any public dataset and integrate them into the research.">Advanced Search</button></p>
+    <table>
+    <tr>
+	<td style="vertical-align:top;">
+	{% csrf_token %}
+		<input type="file" id="multiFiles" name="files[]" multiple="multiple" title="Choose from local"/>
+		<button id="upload1" class="btn btn-primary">Upload</button>
+	</td>
+
+    </tr>
+    <tr>
+  	<td>
+  	<div id='preview1' style="height:400px; width:1200px; overflow-x:scroll; overflow-y:scroll;"></div>	
+  	</td>
+    </tr>
+    </table>
+    
+    <p>Upload Meta-data file&nbsp;<img class='question' title="In this section, users upload their meta-data file(single). ID_REF and LABEL are compulsory. ID_REF is matched with the previous ones in Expression files. LABEL will be used for later visualisation. User can upload clinic data as well.<p><img src='/static/metaUpload.png' width='auto' height='auto' /></p>"/></p>
+    <table>
+    <tr>
+	<td style="vertical-align:top;">
+	{% csrf_token %}
+		<input type="file" id="singleFile" name="singleFile" title="Choose from local"/>
+		<button id="upload2" class="btn btn-primary">Upload</button>
+		<button id="next1" class="btn btn-primary">&nbsp;&nbsp;Next&nbsp;&nbsp;</button>	
+	</td>
+
+    </tr>
+    <tr>
+  	<td>
+  	<div id='preview2' style="height:400px; width:1200px; overflow-x:scroll; overflow-y:scroll;"></div>	
+  	</td>
+    </tr>
+    </table>
+   </fieldset>
+  </div>
+  
+  <div id="tabs-2">
+  <table>
+  
+  <tr>
+	<div id="built-in-data">
+  	<h5>Choose the built-in compiled cohort(s) you want to integrate with:</h5>
+	<br><br>
+	<select id="my-select" multiple="multiple">
+	<optgroup label='Shared-Cohorts'>
+		{% for cohort in root.cohorts %}
+    		<option value="{{ cohort.0 }}" title="{{ cohort.1 }}">{{ cohort.0 }}</option>
+    	{% endfor %}
+    	</optgroup>
+	</select>
+	</div>
+  </tr>
+
+  	
+  <tr id="processOption">
+  	<td>
+   	<div name="Options1" style="left:30px; width:300px;">
+   		<br>
+		<p>Combined Options</p>
+		<input type="radio" name="Comb" value="Combat" checked="checked" /><label>&nbsp;Combat&nbsp;</label><img class='question' style="max-width:4%;" title="ComBat, originally implemented in the R library sva. This tool leverages a parametric and non-parametric empirical Bayes approach for correcting the batch effect in microarray datasets that works for small sample sizes or in the presence of outliers."/>
+		<br>
+  		<input type="radio" name="Comb" value="Harmony" /><label>&nbsp;Harmony&nbsp;</label><img class='question' style="max-width:4%;" title="<p>Harmony is a general-purpose package with an efficient algorithm for integrating multiple data sets. It is especially useful for large single-cell datasets such as single-cell RNA-seq.</p><p>Harmony is:</p><p><b>Fast:</b> Analyze thousands of cells on your laptop.</p><p><b>Sensitive:</b> Different cell types may be present or absent in each batch.</p><p><b>Accurate:</b> Integrate cells from multiple donors, tissues – even different technologies.</p>"/>
+  		<br>
+  		<input type="radio" name="Comb" value="nocorrection" /><label>&nbsp;No Correction&nbsp;</label><img class='question' style="max-width:4%;" title="<p>No correction for causal analysis</p>"/>
+  		<br>
+	</div>
+	</td>
+	
+	<td>
+	<div name="Options2" style="left:30px; width:300px;">
+		<br>
+		<p>Log2 Transformation</p>
+		<input type="radio" name="Log" value="Yes" /><label>&nbsp;Yes</label>
+		<br>
+  		<input type="radio" name="Log" value="No" checked="checked"><label>&nbsp;No</label>
+		<br>
+		<br>
+	</div>
+	</td>
+
+	<td>
+	<div name="Options3" style="left:30px; width:300px;">
+		<br>
+		<p>Feature Reduction Method</p>
+		<input type="radio" name="FR" value="TSNE" /><label>&nbsp;TSNE&nbsp;</label><img class='question' style="max-width:4%;" title="<p>t-SNE (t-distributed Stochastic Neighbor Embedding) is an unsupervised non-linear dimensionality reduction technique for data exploration and visualizing high-dimensional data. Non-linear dimensionality reduction means that the algorithm allows us to separate data that cannot be separated by a straight line. </p>"/>
+		<br>
+  		<input type="radio" name="FR" value="UMAP"  checked="checked" /><label>&nbsp;UMAP&nbsp;</label><img class='question' style="max-width:4%;" title="<p>Uniform Manifold Approximation and Projection (UMAP) is a dimension reduction technique that can be used for visualisation similarly to t-SNE, but also for general non-linear dimension reduction.</p>"/>
+		<br>
+		<input type="radio" name="FR" value="PCA" /><label>&nbsp;PCA&nbsp;</label><img class='question' style="max-width:4%;" title="<p>Principal Component Analysis</p>"/>
+		<br>
+		<br>
+	</div>
+	</td>
+	<td>
+  	</td>
+	</td>
+  </tr>
+  <tr>
+	<td>
+		<div id="metaAdvancedSettingClick" onclick="metaAdvanced();" title="Click to create new labels based on Meta File Data.">&gt;&gt;Enable Meta File Advanced Settings</div>
+	</td>
+  	<td style="text-align:right;" colspan='2'>
+		<button id="next2" class="btn btn-danger">&nbsp;&nbsp;Processing&nbsp;&nbsp;</button>
+		<button id="next2EDA" class="btn btn-primary" disabled>&nbsp;&nbsp;Next&nbsp;&nbsp;</button>
+	</td>
+  </tr>
+  </table>
+  <div id="metaAdvancedSetting">
+	
+	<div id="tabs-label" style='width:1250px;'>
+		<ul>
+		  <li><a href="#tabs-label-1">Label Generation</a></li>
+		  <li><a href="#tabs-label-2">Label Assignment</a></li>
+		  <li><a href="#tabs-label-3" onClick="refreshMyDeleteLabel();">Label Delete</a></li>
+		</ul>
+		<div id="tabs-label-1">
+			<label>Create New Label from numerical fields:</label>
+			<img class='question' style="max-width:0.8%;" title="This tab is used for creating labels based on Continuous variables in meta file.<br>After you created the label, you will need to go to the next tab to activate it.<img src='/static/continuous.png' width='500' height='auto'/>"/>
+			<br>
+			<select id="my-select-label-numeric" onchange="numLabelChange();">
+				<option value='' selected='selected'>----SELECT----</option>
+			</select>
+			<br><br><br>
+			<div>
+				<ul>
+					<li>
+						Input the numeric thredshold(s) and separate each by Comma.
+						<br>
+						<input id="label-numeric-input" style="width:600px"/>
+					</li>
+					<br>
+					<li>
+						Input the Labels corresponding to the intervals and separate each by Comma.
+						<br>
+						<input id="label-numeric-input-texts" style="width:600px"/>
+						&nbsp;&nbsp;<button id="label-numeric-confirm" class="btn btn-primary" onclick="labelNumericConfirm();">&nbsp;&nbsp;Add New Label&nbsp;&nbsp;</button>
+					</li>
+				</ul>
+			</div>
+			<br><br>
+			<div id='numLabelPlot' style="width:auto; height:600px; float:left;"></div>
+		</div>
+		<div id="tabs-label-2">
+			<div style="text-align: center;">
+				<div style="display: inline-block;">
+					<br><br>
+					<select id="my-select-label" multiple="multiple">
+					</select>
+					<br>
+				</div>
+			</div>
+			<ul>
+				<li>Press 'Modify' to make the above selected categorical fields as Labels:<img class='question' style="max-width:0.8%;" title="Activate you previously created label or the Categorical label in the meta-file.<br><img src='/static/labels.png' width='500' height='auto'/>"/>
+				</li>
+			</ul>
+			<button id="label-assign-confirm" class="btn btn-primary" onclick="labelAssignConfirm();"; style="margin-left:800px;" style="margin-left:300px;">&nbsp;&nbsp;Modify&nbsp;&nbsp;</button>	
+		</div>
+		<div id="tabs-label-3">
+			<ul>
+				<li>Delete the label you previously created.<img class='question' style="max-width:0.8%;" title="Only inactive labels with the suffix  '__crted'  can be deleted."/>
+				</li>
+			</ul>
+			<div style="text-align: center;">
+				<div style="display: inline-block;">
+					<br><br>
+					<select id="my-select-label-delete">
+						<option value='' selected='selected'>----SELECT----</option>
+					</select>
+					<br>
+				</div>
+			</div>
+			<button id="label-delete-confirm" class="btn btn-primary" onclick="labelDeleteConfirm();"; style="margin-left:800px;" style="margin-left:300px;">&nbsp;&nbsp;Delete&nbsp;&nbsp;</button>	
+		
+		</div>
+	</div>
+  </div>
+  </div>
+  
+
+  <div id="tabs-3">
+  	<p>Gene Data Explory Data Analyses</p>
+	<br>
+	<div  id='VbOption' style="margin: 0 auto; display: table; background-color: rgb(184, 184, 224); border-radius: 5px;">
+		<label>&nbsp;&nbsp;Choose the created Label as target:&nbsp;&nbsp;</label>
+		<select id="eda-label-choose" onchange="edaLabelChange();">
+			<option value='batch2' selected='selected'>LABEL</option>
+		</select>&nbsp;&nbsp;
+	</div>
+  	<div id='tab3div'>
+		<div id="tabs-eda" style='width:1250px;'>
+			<ul>
+			  <li><a href="#tabs-eda-1" id="VbL">Data processed by Labels</a></li>
+			  <li><a href="#tabs-eda-2" id="VbF">Data processed by FileNames</a></li>
+			</ul>
+			<div id="tabs-eda-1">
+				<div id="graphDiv2" class='no-break' style="width:850px;height:850px;overflow-x:scroll; overflow-y:scroll;"></div>
+				<p>Dotplot of top 4 genes for each LABEL</p>
+				<a id='graphDiv21A' href="..." target="_blank" download="image.svg" style="display: block;">Download Image</a><br><br><br><br><br><br><br><br><br>
+  				<div id="graphDiv21" class="rotated no-break" style="width:800px;height:500px; overflow-x:scroll; overflow-y:scroll;"></div>
+				<br><br><br><br><br><br><br><br><br>
+  				<button id='topForLabelsDownloadBtn' class='btn btn-primary' onclick='getTopGenes(2);'>Download DEGs</button>		
+			</div>
+			<div id="tabs-eda-2">
+				<div id="graphDiv1" class='no-break' style="width:850px;height:850px;overflow-x:scroll; overflow-y:scroll;"></div>
+				<div style="width:100%; border-top:1px solid #ccc;"></div>
+				<p>Dotplot of top 4 genes for each file</p>
+				<a id='graphDiv11A' href="..." target="_blank" download="image.svg" style="display: block;">Download Image</a><br><br><br><br><br><br><br><br><br>
+				<div id="graphDiv11" class="rotated no-break" style="width:800px;height:500px; overflow-x:scroll; overflow-y:scroll;"></div>
+				<br><br><br><br><br><br><br><br><br>
+				<button id='topForFilesDownloadBtn' class='btn btn-primary' onclick='getTopGenes(1);'>Download DEGs</button>
+			</div>
+		</div>
+  	</div>
+  	<br>
+	<div style="text-align:right;">
+		<button id="download1" class="btn btn-primary" style="width:auto;" onclick='getTopGenes(4);'>Download Processed data</button>
+		<br><br>
+		<button id="next3" class="btn btn-primary">&nbsp;&nbsp;Next&nbsp;&nbsp;</button>
+			
+	</div>
+
+  </div>
+ 
+ 
+  <div id="tabs-4">
+  	<p>Choose Options for cohort comparison:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  	
+		<table>
+				<tr>
+					<td style="height:50px; width:400px; border-right:1px solid #ccc;">
+						<label> Based on ICA/ICA and Cohort labels:</label>
+						<button class="btn btn-primary" onclick="window.open('compType/ICA/?cID='+clientUniqueID,'_blank');">Go to new page</button>
+					</td>	
+					<td style="height:50px;">
+						<label> Based on ORA:</label>
+						<br>
+						<button class="btn btn-primary" onclick="window.open('compType/ORA/?cID='+clientUniqueID,'_blank');">Go to new page</button>
+					</td>
+				</tr>
+		</table>
+  </div>
+
+  
+  <div id='tabs-5'>
+  	<p>Choose ML methods for association analysis:</p>
+  	<br>
+  	<div>
+  		<table>
+  			<tr>
+  			        <td>
+						<label>Classfication/Regression:</label>
+						<br>
+					  <select id='ml_clasORregres' onchange="ml_hideclasORregres();">
+					      <option value='' selected='selected'>----SELECT----</option>
+						  <option value='classification'>Classification</option>
+						  <option value='regression' >Regression</option>
+						</select>
+					</td>
+  				    <td>
+		  			    <label>Select Label:</label>
+						<br>
+					    <select id='ml_label_name' onchange="ml_label_name_change();">
+						  <option value='' selected='selected'>----SELECT----</option>
+						</select>
+					</td>	
+					<td>
+						<div id='ml_cate4ML'>
+							<label>Select Class of Interest (1-Labelled) :</label>
+							<br>
+							<select id='ml_class_val'>
+								<option value='' selected='selected'>----SELECT----</option>
+							</select>
+						</div>
+						<div id='ml_num4ML' style='display:none;'>
+							<label>Whether log1p Y:</label>
+							<br>
+							<select id='ml_logY'>
+								<option value='yes' selected='selected'>Yes</option>
+								<option value='no' >No</option>
+							</select>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label>ratio for test:</label>
+						<br>
+					  <select id='ml_testRatio' onchange="">
+						  <option value='2' selected='selected'>0.2</option>
+						  <option value='1' >0.1</option>
+						</select>
+					</td>
+					<td colspan="2">
+						<label>Parameters (sep=,):</label>
+						<br>
+						<input id='ml_p' style='width:800px;'/>
+						<button class="btn btn-primary" id='auto_fill_mlP' onclick="auto_fill_mlP();">Auto fill param</button>
+					</td>
+				</tr>
+				<tr>
+				    <td>
+				        <label><input type='checkbox' id='flipShap'> Flip Importance order</label>
+				    </td>
+				    <td>
+				        <label>Feature selection Ratio:</label>
+						<br>
+				        <select id='ml_drop'>
+						  <option value='0.65' selected='selected'>0.65</option>
+						  <option value='0.8' >0.8</option>
+						</select>
+				    </td>
+				</tr>
+			</table>
+		</div>
+		<br>
+		
+		<div id="tabs-5-ML" class="tabs-simple" style='width:1250px;'>
+			<ul>
+			  <li><a href="#tabs-ML-1" id="ML1">Random Forests</a></li>
+			  <li><a href="#tabs-ML-2" id="ML2">XGBoost</a></li>
+			  <li><a href="#tabs-ML-3" id="ML3">LightGBM</a></li>
+			</ul>
+			<div id="tabs-ML-1">
+				<p>Random forests is a machine learning algorithm that combines multiple decision trees to make a prediction. It's used for classification, regression, and other tasks.</p>
+				<table>
+					<tr>
+						<td>
+					  	<button id="rf_btn" class="btn btn-primary" onclick="goML('rf','','');">Run Random Forests</button>
+					  	<button class="btn btn-primary fi_btn" onclick="showIm(0);">Show Feature Importance</button>
+						</td>
+				  </tr>
+				  <tr>
+				  	<td>
+				 			<table id="rf_table" class="display" style="width:100%"></table>
+				  	</td>
+				  </tr>
+				</table>
+			</div>
+			<div id="tabs-ML-2">
+				<p>XGBoost, or Extreme Gradient Boosting, is an open-source machine learning library that uses gradient boosting to solve classification and regression problems. It's designed to be efficient, flexible, and portable. </p>
+				<table>
+					<tr>
+						<td>
+					  	<button id="xgb_btn" class="btn btn-primary" onclick="goML('xgb','','');">Run XGBoost</button>
+					  	<button class="btn btn-primary fi_btn" onclick="showIm(0);">Show Feature Importance</button>
+						</td>
+				  </tr>
+				  <tr>
+				  	<td>
+				 			<table id="xgb_table" class="display" style="width:100%"></table>
+				  	</td>
+				  </tr>
+				</table>
+			</div>
+			<div id="tabs-ML-3">
+				<p>LightGBM, short for Light Gradient-Boosting Machine, is a free and open-source distributed gradient-boosting framework for machine learning, originally developed by Microsoft. It is based on decision tree algorithms and used for ranking, classification and other machine learning tasks. The development focus is on performance and scalability.</p>
+				<table>
+					<tr>
+						<td>
+					  	<button id="Lig_btn" class="btn btn-primary" onclick="goML('lightgbm','','');">Run LightGBM</button>
+					  	<button class="btn btn-primary fi_btn" onclick="showIm(0);">Show Feature Importance</button>
+						</td>
+				    </tr>
+				  <tr>
+				  	<td>
+				 			<table id="Lig_table" class="display" style="width:100%"></table>
+				  	</td>
+				  </tr>
+				</table>
+			</div>
+		</div>
+  </div>
+  <div id='tabs-8'>
+    <div class="common-params">
+        <h5>Common Parameters</h5>
+        <table>
+            <tr>
+                <td>
+                    <label for="dml_batch">Selected batch:</label>
+                    <br>
+                    <input id='dml_batch' type="text" style="background-color: #e0e0e0;" readonly />
+                </td>
+                <td>
+                    <label for="dml_batch1">batch1:</label>
+                    <br>
+                    <input id='dml_batch1' type="text" style="width:400px;background-color: #e0e0e0;" readonly />
+                </td>
+                <td>
+                    <label for="dml_batch2">batch2:</label>
+                    <br>
+                    <input id='dml_batch2' type="text" style="width:400px;background-color: #e0e0e0;" readonly />
+                </td>                
+            </tr>
+            <tr>
+                <td>
+                    <label for="dml_type">ML Type:</label>
+                    <br>
+                    <select id="dml_clasORregres" onchange="dml_list_label();">
+                        <option value='' selected='selected'>----SELECT----</option>
+                        <option value="classification">Classification</option>
+                        <option value="regression">Regression</option>
+                    </select>
+                </td>
+                <td>
+                    <label for="dml_label_name" onchange="dml_label_name_change();">Select Label:</label>
+                    <br>
+                    <select id='dml_label_name' onchange="dml_label_name_change();">
+						  <option value='' selected='selected'>----SELECT----</option>
+				    </select>
+                </td>
+                <td>
+                    <div id='dml_cate4ML'>
+							<label>Select Class of Interest (1-Labelled) :</label>
+							<br>
+							<select id='dml_class_val'>
+								<option value='' selected='selected'>----SELECT----</option>
+							</select>
+					</div>
+					<div id='dml_num4ML' style='display:none;'>
+							<label>Whether log1p Y:</label>
+							<br>
+							<select id='dml_logY'>
+								<option value='yes' selected='selected'>Yes</option>
+								<option value='no' >No</option>
+							</select>
+					</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan='4'>
+				        <label>Feature selection Ratio:</label>
+				        <select id='dml_drop'>
+						  <option value='0.65' selected='selected'>0.65</option>
+						  <option value='0.8' >0.8</option>
+						</select>
+			    </td>
+            </tr>
+        </table>
+    </div>
+    <br>
+    <div class='dml-container'>
+        <div class="dml-config">
+            <h5>ML1 Configuration</h5>
+            <br>
+            <label for="dml_method1">Choose ML Algorithm:</label>
+            <br>
+            <select id="dml_method1" onchange="auto_fill_P('#dml_method1','#dml_p1');">
+                <option value='' selected='selected'>----SELECT----</option>
+                <option value='rf'>Random Forests</option>
+                <option value='xgb'>XGBoost</option>
+                <option value='lightgbm'>LightGBM</option>
+            </select>
+            <br>
+            <br>
+            <label for="dml_testRatio1">Ratio for Test:</label>
+            <br>
+            <select id='dml_testRatio1'>
+                <option value='2' selected='selected'>0.2</option>
+                <option value='1'>0.1</option>
+            </select>
+            <br>
+            <br>
+            <label>Params:</label>
+            <br>
+            <input id='dml_p1' style='width:600px;' />
+            <br>
+            <br>
+            <button id="dml_btn1" class="btn btn-primary" onclick="goDML('#dml_method1',1);">Run DML1</button>
+			<button class="btn btn-primary fi_btn" onclick="showIm(1);">Show Feature Importance</button>
+            
+            
+    
+        </div>
+    <!-- ML2 Configuration -->
+        <div class="dml-config">
+            <h5>ML2 Configuration</h5>
+            <br>
+            <label for="dml_method2">Choose ML Algorithm:</label>
+            <br>
+            <select id="dml_method2" onchange="auto_fill_P('#dml_method2','#dml_p2');">
+                <option value='' selected='selected'>----SELECT----</option>
+                <option value='rf'>Random Forests</option>
+                <option value='xgb'>XGBoost</option>
+                <option value='lightgbm'>LightGBM</option>
+            </select>
+            <br>
+            <label for="dml_testRatio2">Ratio for Test:</label>
+            <br>
+            <br>
+            <select id='dml_testRatio2'>
+                <option value='2' selected='selected'>0.2</option>
+                <option value='1'>0.1</option>
+            </select>
+            <br>
+            <br>
+            <label>Params:</label>
+            <br>
+            <input id='dml_p2' style='width:600px;' />
+            <br>
+            <br>
+            <button id="dml_btn2" class="btn btn-primary" onclick="goDML('#dml_method2',2);">Run DML2</button>
+			<button class="btn btn-primary fi_btn" onclick="showIm(2);">Show Feature Importance</button>
+        </div>
+     </div>
+     <br>
+     <button class="btn btn-primary fi_btn" onclick="window.open('dml/report/?cID='+clientUniqueID);">Generate DML report</button>
+  </div>
+  <div id='tabs-6'>
+  	<p>Choose methods for causal analysis:</p>
+  	<br>
+  	<div>
+  		<table>
+  		    <tr>
+  		        <td><label><input type='checkbox' id='cf_use_ica_cohort' checked> Use ICA-cohort</label></td>
+  		        <td><label> Test Ratio:</label>
+  		            <select id='cf-testRatio'>
+                        <option value=0.2 selected='selected'>0.2</option>
+                        <option value=0.1>0.1</option>
+                    </select>
+  		        </td>
+  		        <td>
+				        <label>Feature selection Ratio:</label>
+						<br>
+				        <select id='ca_drop'>
+						  <option value='0.65' selected='selected'>0.65</option>
+						  <option value='0.8' >0.8</option>
+						</select>
+				</td>
+  		    </tr>
+  			<tr>
+  				<td>
+  					<label>Select Label as T:</label>
+						<br>
+					  <select id='ca-asT' onchange="ca_T_change();">
+						  <option value='' selected='selected'>----SELECT----</option>
+						</select>
+  				</td>
+  				<td>
+  					<label>Classification:</label>
+						<br>
+					  <select id='ca-TType' onchange="">
+						  <option value='classification' selected='selected'>Classification</option>
+						</select>
+  				</td>
+  				<td>
+  					<label>Select Class of Interest (1-Labelled) :</label>
+						<br>
+					  <select id='ca-TInterest' onchange="">
+						  <option value='' selected='selected'>----SELECT----</option>
+						</select>
+  				</td>
+  				<td>
+  					<label>Model for T:</label>
+						<br>
+					  <select id='ca-Tmod' onchange="auto_fill_P('#ca-Tmod','#ca-Tp');">
+					      <option value='' selected='selected'>----SELECT----</option>
+						  <option value='rf'>Random Forests</option>
+						  <option value='xgb'>XGBoost</option>
+						  <option value='lightgbm'>LightGBM</option>
+						  <option value='gb'>GradientBoost</option>
+						</select>
+  				</td>
+  				<td>
+						<label>Parameters for the Model (sep=,):</label>
+						<br>
+						<input id='ca-Tp' style='width:500px;' />
+					</td>
+  			</tr>
+  			<tr>
+  				<td>
+  					<label>Select Label as Y:</label>
+						<br>
+					  <select id='ca-asY' onchange="ca_Y_change();">
+						  <option value='' selected='selected'>----SELECT----</option>
+						</select>
+  				</td>
+  				<td>
+  					<label>Classification/Regression:</label>
+						<br>
+					  <select id='ca-YType' onchange="">
+						  <option value='classification' selected='selected'>Classification</option>
+						  <option value='regression'>Regression</option>
+						</select>
+  				</td>
+  				<td>
+  				    <div id='ca-YInterest-div'>
+  					<label>Select Class of Interest (1-Labelled) :</label>
+						<br>
+					    <select id='ca-YInterest' onchange="">
+						  <option value='' selected='selected'>----SELECT----</option>
+						</select>
+				    </div>
+				    <div id='ca-Ylog-div' style='display:none;'>
+				        <label>log1p Y:</label>
+						<br>
+					    <select id='ca-Ylog'>
+						  <option value='yes' selected='selected'>yes</option>
+						  <option value='no'>no</option>
+						</select>
+				    </div>
+  				</td>
+  				<td>
+  					<label>Model for Y:</label>
+						<br>
+					  <select id='ca-Ymod' onchange="auto_fill_P('#ca-Ymod','#ca-Yp');">
+					    <option value='' selected='selected'>----SELECT----</option>
+						  <option value='rf'>Random Forests</option>
+						  <option value='xgb'>XGBoost</option>
+						  <option value='lightgbm'>LightGBM</option>
+						  <option value='gb'>GradientBoost</option>
+						</select>
+  				</td>
+  				<td>
+						<label>Parameters for the Model (sep=,):</label>
+						<br>
+						<input id='ca-Yp' style='width:500px;' />
+				</td>
+				<tr>
+				    <td>
+				    <button class="btn btn-primary" onclick="run_cf1();">Run 2 models</button>
+				    </td>
+				</tr>
+  			</tr>
+  		</table>
+  	</div>
+  	<div id="tabs-6-ca" class="tabs-simple" style='width:1250px;'>
+			<ul>
+			  <li><a href="#tabs-6-ca-1" id="ca1">Causal Forests</a></li>
+			</ul>
+		<div id='tabs-6-ca-1'>
+			<table>
+				<tr>
+					<td>
+						<label>n_estimators:</label>
+						<br>
+						<input id='cf_n_estimators' style='width:150px' type='number' step='1' value='200'/>
+					</td>
+					<td>
+						<label>Other Params:</label>
+						<br>
+						<input id='cf_p' style='width:550px'/>
+						<button class="btn btn-primary" id='auto_fill_cfp' onclick="auto_fill_cfp();">Auto fill param</button>
+					</td>
+				</tr>
+			</table>
+			<button class="btn btn-primary" onclick="run_cf2();">Run Causal Forests</button>
+			<button class="btn btn-primary" onclick="window.open('cf/featureImportance/?cID='+clientUniqueID,'_blank')">Show Feature Importance</button>
+		</div>
+	</div>
+  </div>
+  <div id='tabs-7'>
+        <div id="tabs-7-meta" class="tabs-simple" style='width:1250px;'>
+			<ul>
+			  <li><a href="#tabs-7-1" id="meta1">ICA Based on Cohorts</a></li>
+			  <li><a href="#tabs-7-2" id="meta1">ICA</a></li>
+			</ul>
+		    <div id='tabs-7-1'>
+		        <table>
+		            <tr>
+		                <td>
+		                    <p>Select the Label for the metagemes:</p>
+		                    <select id='metagene-cohort-select' onchange='showCohortMetagene();'>
+		                        <option value='' selected='selected'>----SELECT----</option>
+						    </select>
+		                </td>
+		                <td>
+		                    <p>Select the metagemes:</p>
+		                    <select id='metagene-select1'>
+					            <option value='' selected='selected'>----SELECT----</option>
+						    </select>
+		                </td>
+		                <td>
+		                    <button id="metagene_btn1" class="btn btn-primary" style="margin-left:100px;" onclick="goMetagenes(1);">Enrichment Analysis</button>
+		                </td>
+		            </tr>
+		        </table>
+        	    <br><br>	   
+	        </div>
+    	    <div id='tabs-7-2'>
+    	        <p>Select the metagenes:</p>
+        	    <select id='metagene-select2'>
+        	        <option value='' selected='selected'>----SELECT----</option>
+        	    </select>
+        	    <button id="metagene_btn2" class="btn btn-primary" style="margin-left:100px;" onclick="goMetagenes(2);">Enrichment Analysis</button>
+        	    <br><br>
+    	    </div>
+    	</div>
+    	<br>
+    	<table id="metagenes_table"  class="display" style="width:100%"></table>
+	   
+  </div>
+</div>
+
+{% endblock %}

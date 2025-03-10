@@ -1,0 +1,12 @@
+IMID/static/temp/
+!IMID/static/temp/.gitkeep
+__pycache__
+djangoproject/__pycache_
+IMID/__pycache__
+accounts/migrations/__pycache__
+accounts/__pycache__
+.RData
+.Rhistory
+test/
+uploaded/
+db.sqlite3*
