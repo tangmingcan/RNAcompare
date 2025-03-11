@@ -72,6 +72,62 @@
 			intro:'Choose the Value for coloring the processed data.'
 		},
 		{
+		    element: document.querySelector('.fourth'),
+			intro:'In this section, users have options to choose how to compare different cohorts. We provide 4 different options for result consistency check. Comparison based on Independent Component Analysis (ICA) and cohort labels; Comparison based on only ICA/PCA; Comparison based on Enrichment Score with Over Representation Analysis(ORA).'
+		},
+		{
+		    element: document.querySelector('#ica_cohort_td'),
+			intro:'We introduced ICA into multi-omics to decompose the gene expression matrix into independent components. Each independent component was treated as a metagene, characterised by a co-expression pattern and was associated with certain meaningful biological pathway.'
+		},
+		{
+		    element: document.querySelector('#ora_td'),
+			intro:'ORA is used to determine which a priori defined gene sets are more present (over-represented) in a subset of interesting genes than what would be expected by chance.'
+		},
+		{
+		    element: document.querySelector('.fifth'),
+			intro:'Here, the user has the option to associate selected clinical data parameters with the (harmonised) omics data in order to study phenotypes.'
+		},
+		{
+		    element: document.querySelector('#tabs-5-ML'),
+			intro:'We provide 3 ML algorithms: Random Forests, XGBoost, LightGBM.'
+		},
+		{
+		    element: document.querySelector('.sixth'),
+			intro:'Double Machine Learning algorithm without needing batch correction. Note: You must do cohort-ICA for 2 batches First!'
+		},
+		{
+		    element: document.querySelector('#dml-config1'),
+			intro:'Create Model I based on batch 1 first.'
+		},
+		{
+		    element: document.querySelector('#dml-config2'),
+			intro:'Then, create Model II based on batch 2.'
+		},
+		{
+		    element: document.querySelector('#dml_btn3'),
+			intro:'Finally, generate the report.'
+		},
+		{
+		    element: document.querySelector('.seventh'),
+			intro:'The platform provides Causal Forests based on PCA/ICA processed components for cohorts. Causal Forests is a machine learning method used for estimating heterogeneous treatment effects (HTE) in observational data.'
+		},
+		{
+		    element: document.querySelector('#cf_use_ica_cohort'),
+			intro:'Check this box, if you previously run ICA based on cohorts.'
+		},
+		{
+		    element: document.querySelector('#cf1_td'),
+			intro:'Run first stage of Causal Forests for T&Y models.'
+		},
+		{
+		    element: document.querySelector('#cf2_btn'),
+			intro:'Run second stage of Causal Forests for forests model.'
+		},
+		{
+		    element: document.querySelector('.eighth'),
+			intro:'As the previous analysis will return components of interest, this tab helps to identify biological pathways and signature sets significantly enriched in the dataset.'
+		},
+		{
 			element: document.querySelector('#tour'),
 			intro:'Or go back to this tour again.'
 		},
@@ -96,6 +152,9 @@
       }
 	  else if ($(targetElement).closest('.seventh').length) {
         $('#tabs').tabs('option', 'active', 6); // Activate Tab 7
+      }
+      else if ($(targetElement).closest('.eighth').length) {
+        $('#tabs').tabs('option', 'active', 7); // Activate Tab 8
       }
 	  else if ($(targetElement).closest('#tour').length) {
         $('#tabs').tabs('option', 'active', 0); // Activate Tab 1
@@ -1517,9 +1576,9 @@ function run_cf2(){
     <li><a href="#tabs-3" class="third">EDA</a></li>
     <li><a href="#tabs-4" class="fourth">Cohort Comparison</a></li>
     <li><a href='#tabs-5' class="fifth">Association Analysis</a></li>
-	<li><a href='#tabs-8' class="eighth" onclick="initDML();">Double ML Analysis</a></li>
-	<li><a href='#tabs-6' class="sixth" >Causal Analysis</a></li>
-    <li><a href="#tabs-7" class="seventh" onclick="refreshMetagenes();">Enrichment Analysis</a></li>
+	<li><a href='#tabs-8' class="sixth" onclick="initDML();">Double ML Analysis</a></li>
+	<li><a href='#tabs-6' class="seventh" >Causal Analysis</a></li>
+    <li><a href="#tabs-7" class="eighth" onclick="refreshMetagenes();">Enrichment Analysis</a></li>
   </ul>
   <div id="tabs-1">
     <fieldset name="Multiple Files Upload">
@@ -1755,11 +1814,11 @@ function run_cf2(){
   	
 		<table>
 				<tr>
-					<td style="height:50px; width:400px; border-right:1px solid #ccc;">
+					<td style="height:50px; width:400px; border-right:1px solid #ccc;" id='ica_cohort_td'>
 						<label> Based on ICA/ICA and Cohort labels:</label>
 						<button class="btn btn-primary" onclick="window.open('compType/ICA/?cID='+clientUniqueID,'_blank');">Go to new page</button>
 					</td>	
-					<td style="height:50px;">
+					<td style="height:50px;" id='ora_td'>
 						<label> Based on ORA:</label>
 						<br>
 						<button class="btn btn-primary" onclick="window.open('compType/ORA/?cID='+clientUniqueID,'_blank');">Go to new page</button>
@@ -1967,7 +2026,7 @@ function run_cf2(){
     </div>
     <br>
     <div class='dml-container'>
-        <div class="dml-config">
+        <div class="dml-config" id='dml-config1'>
             <h5>ML1 Configuration</h5>
             <br>
             <label for="dml_method1">Choose ML Algorithm:</label>
@@ -1994,13 +2053,10 @@ function run_cf2(){
             <br>
             <br>
             <button id="dml_btn1" class="btn btn-primary" onclick="goDML('#dml_method1',1);">Run DML1</button>
-			<button class="btn btn-primary fi_btn" onclick="showIm(1);">Show Feature Importance</button>
-            
-            
-    
+			<button class="btn btn-primary fi_btn" onclick="showIm(1);">Show Feature Importance</button>  
         </div>
     <!-- ML2 Configuration -->
-        <div class="dml-config">
+        <div class="dml-config" id='dml-config2'>
             <h5>ML2 Configuration</h5>
             <br>
             <label for="dml_method2">Choose ML Algorithm:</label>
@@ -2012,8 +2068,8 @@ function run_cf2(){
                 <option value='lightgbm'>LightGBM</option>
             </select>
             <br>
-            <label for="dml_testRatio2">Ratio for Test:</label>
             <br>
+            <label for="dml_testRatio2">Ratio for Test:</label>
             <br>
             <select id='dml_testRatio2'>
                 <option value='2' selected='selected'>0.2</option>
@@ -2031,7 +2087,7 @@ function run_cf2(){
         </div>
      </div>
      <br>
-     <button class="btn btn-primary fi_btn" onclick="window.open('dml/report/?cID='+clientUniqueID);">Generate DML report</button>
+     <button id='dml_btn3' class="btn btn-primary fi_btn" onclick="window.open('dml/report/?cID='+clientUniqueID);">Generate DML report</button>
   </div>
   <div id='tabs-6'>
   	<p>Choose methods for causal analysis:</p>
@@ -2039,7 +2095,7 @@ function run_cf2(){
   	<div>
   		<table>
   		    <tr>
-  		        <td><label><input type='checkbox' id='cf_use_ica_cohort' checked> Use ICA-cohort</label></td>
+  		        <td><label><input type='checkbox' id='cf_use_ica_cohort' checked> Use cohort-ICA</label></td>
   		        <td><label> Test Ratio:</label>
   		            <select id='cf-testRatio'>
                         <option value=0.2 selected='selected'>0.2</option>
@@ -2144,7 +2200,7 @@ function run_cf2(){
 						<input id='ca-Yp' style='width:500px;' />
 				</td>
 				<tr>
-				    <td>
+				    <td id='cf1_td'>
 				    <button class="btn btn-primary" onclick="run_cf1();">Run 2 models</button>
 				    </td>
 				</tr>
@@ -2171,7 +2227,7 @@ function run_cf2(){
 					</td>
 				</tr>
 			</table>
-			<button class="btn btn-primary" onclick="run_cf2();">Run Causal Forests</button>
+			<button id='cf2_btn' class="btn btn-primary" onclick="run_cf2();">Run Causal Forests</button>
 			<button class="btn btn-primary" onclick="window.open('cf/featureImportance/?cID='+clientUniqueID,'_blank')">Show Feature Importance</button>
 		</div>
 	</div>

@@ -11,11 +11,8 @@ urlpatterns = [
     path("eda/", views.eda, name="eda"),
     path("dgea/candiGenes/", views.candiGenes, name="candiGenes"),
     path("dgea/", views.dgea, name="dgea"),
-    path("cluster/", views.clustering, name="clustering"),
-    path("cluster/advanced/", views.clusteringAdvanced, name="clusteringAdvanced"),
     path("goenrich/", views.goenrich, name="goenrich"),
     path("", views.tab, name="tab"),
-    path("advancedSearch/", views.advancedSearch, name="advancedSearch"),
     path("meta/columns/", views.meta_columns, name="meta_columns"),
     path(
         r"meta/<slug:colName>/",
