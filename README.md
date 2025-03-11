@@ -235,6 +235,18 @@ From the plot, we can see the difference and similarity between differnt values 
 
 ![image](https://github.com/user-attachments/assets/86fe142e-53c4-4543-a0cb-97dff8857099)
 
+### Association analysis
+Here, the user has the option to associate selected clinical data parameters with the (harmonised) omics data in order to study phenotypes. We provide Random Forests, XGBoost and LightGBM with its corresponding parameters for basic tuning. The data will be split into training and test (20% default) datasets. AUC-ROC or MSE will be shown according to different cases. This module will provide SHAP feature importance plot and SHAP dependence plot.
+
+![image](https://github.com/user-attachments/assets/a274c4d5-c98f-42c3-9c50-fc012214fa05)
+
+![image](https://github.com/user-attachments/assets/37ff9341-b720-4131-85f4-26f52cab72b8)
+
+
+
+
+
+
 
 
 
