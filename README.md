@@ -254,7 +254,22 @@ The platform provides Causal Forests based on PCA/ICA processed components for c
 The reason why we provide both PCA and ICA processed components is because we think when focusing on HTE, we think PCA will be more robust. However, when focusing on explainable components, ICA will be better.
 When using this module, user needs to designate T and Y as the parameters. T is the label representing treatment effect or the predefined cohorts, which we limit only for categorical variables; Y is the dependent variable for phenotype.
 
-![image](https://github.com/user-attachments/assets/bb6d9afd-f357-4a1b-8724-5aa58d5fd12c)
+![image](https://github.com/user-attachments/assets/2990084e-950f-47e4-9023-6a1fec01d654)
+
+After runing the first stage to get T&Y models, then run the second stage. You will see the estimated HTE on test dataset.
+
+![image](https://github.com/user-attachments/assets/9ba46945-6c69-40bc-a8f2-481d4336915c)
+
+Then we can see the Feature Importance plot.
+
+![image](https://github.com/user-attachments/assets/b1b1452d-2115-4d5f-ba9d-c4774ae4f043)
+
+As we see, old aged people is good for anti-TNF treatment. High M is good for anti-TNF treatment. We can also check the position of metagene_6_ which is IFN gamma.
+
+![image](https://github.com/user-attachments/assets/573811f4-309f-4840-8f93-ef4b31f13a69)
+Metagene_1_ is L1CAM which is related to **pain**, but **Note, we just use RF, and the AUC for Y is not good enough.**
+
+
 
 
 
