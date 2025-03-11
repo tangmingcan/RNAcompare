@@ -119,7 +119,7 @@ Reload Nginx to apply the changes:`sudo systemctl reload nginx`
 In constants.py, there are a few global parameters:
 ```python
 ALLOW_UPLOAD = True # This is to control the platform whether to allow user to upload data
-SHAP_PLOT_DATASET='X' # This is for SHAP importance plot and dependence plot based on X/X_train/X_test dataset.
+**SHAP_PLOT_DATASET='X' # This is for SHAP importance plot and dependence plot based on X/X_train/X_test dataset.**
 ```
 ## System Introduction
 ### Platform Features:
@@ -170,6 +170,18 @@ As the previous analysis will return components of interest, this tab helps to i
 ![image](https://github.com/user-attachments/assets/24f34712-6ffa-4575-9b6e-377a6c12630b)
 
 ## Result & Demonstration
+### Data Collection
+Our platform supports the integration of multi-omics data with clinical data, facilitating a comprehensive analysis that combines not only genetic, transcriptomic, proteomic, and metabolomic data but also RNA-seq and microarray with patient-specific clinical information. This integrated approach allows users to uncover more complex and clinically relevant insights. After clicking the ‘Upload’ button in the sidebar, uploaded information about the study and experiment is displayed in the panel. It shows the first 5 rows for dataset with column names. User will have option to select log2 to transform the dataset later. For later calculation.
+User can upload more than one expression files which will be treated as different batches.
 ![image](https://github.com/user-attachments/assets/1b6d2846-6e3d-42a1-92c5-e87ee6e66bfc)
+
+### Data Integration
+Similar to RNAcare, user have option to choose built-in compiled cohorts for integration. RNAcompare provide 3 options for integration: Combat, Harmony or No batch correction. When finding the similarity of different batches without using association analysis, we recommend no batch correction method.
+![image](https://github.com/user-attachments/assets/b0b8ac87-8890-43fd-9c19-063fe4f79f28)
+After uploading the data to the platform, user needs to tell the platform which fields in the clinic data will be treated as LABEL/Batches/cohorts. First, a field called "LABEL" is compulsory for the system to recognize. As you see in the picture, user tells the platform to recognize the other two fields as well, namely 'LABEL1', 'LABEL2'. 
+**LABEL is the label for disguishing patients for drug response or non-response group.
+LABEL1 is the label for disguishing patients for anti-TNF response/non-response or Rituximab response/non-response group.
+LABEL2 is the label for disguishing patients for anti-TNF or Rituximab.**
+
 
 
