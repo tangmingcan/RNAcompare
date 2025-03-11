@@ -266,8 +266,10 @@ Then we can see the Feature Importance plot.
 
 As we see, old aged people is good for anti-TNF treatment. High M is good for anti-TNF treatment. We can also check the position of metagene_6_ which is IFN gamma.
 
-![image](https://github.com/user-attachments/assets/573811f4-309f-4840-8f93-ef4b31f13a69)
+![image](https://github.com/user-attachments/assets/d2ba45fa-9546-4883-a46b-d1931651e42e)
+
 Metagene_1_ is L1CAM which is related to **pain**, but **Note, we just use RF, and the AUC for Y is not good enough.**
+
 
 
 
