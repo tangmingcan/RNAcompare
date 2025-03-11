@@ -176,15 +176,73 @@ User can upload more than one expression files which will be treated as differen
 
 ![image](https://github.com/user-attachments/assets/1b6d2846-6e3d-42a1-92c5-e87ee6e66bfc)
 
-### Data Integration
+### Data Integration & Visualization
 Similar to RNAcare, user have option to choose built-in compiled cohorts for integration. RNAcompare provide 3 options for integration: Combat, Harmony or No batch correction. When finding the similarity of different batches without using association analysis, we recommend no batch correction method.
 
 ![image](https://github.com/user-attachments/assets/b0b8ac87-8890-43fd-9c19-063fe4f79f28)
 
 After uploading the data to the platform, user needs to tell the platform which fields in the clinic data will be treated as LABEL/Batches/cohorts. First, a field called "LABEL" is compulsory for the system to recognize. As you see in the picture, user tells the platform to recognize the other two fields as well, namely 'LABEL1', 'LABEL2'. 
+
 **LABEL is the label for disguishing patients for drug response or non-response group.
+
 LABEL1 is the label for disguishing patients for anti-TNF response/non-response or Rituximab response/non-response group.
+
 LABEL2 is the label for disguishing patients for anti-TNF or Rituximab.**
+
+After data processing, user will be guided to data visualization part to overview the data.
+
+![image](https://github.com/user-attachments/assets/8ebc0433-38cb-44ec-92f7-006a12555f70)
+
+### Cohort Comparision
+In this section, users have options to choose how to compare different cohorts. We provide 3 different level options for result consistency check. Comparison based on ICA and cohort labels; Comparison based on only Independent Component Analysis; Comparison based on Enrichment Score with Over Representation Analysis(ORA). Their pros and cons are discussed in the paper. After users choose the option, a new page corresponding to the method will be opened.
+
+Cohorts can have the different definition, depending on the scenarios. In our case studies, it is a categorical label representing the heterogeneous attribute, such as drugs, tissue types or disease types. Other options can be a label standing for 2 different stages of one disease. As we all know DEGs, sensitive to batch correction, is used for finding the different expression genes between the cohorts. Our platform is trying to looking for similarities, where records from different cohorts with strong heterogeneity usually are not easily merged together after UMAP and clustering methods such as K-Means.
+
+![image](https://github.com/user-attachments/assets/e9879697-c017-48d1-9ca9-61c43c1b5030)
+
+### Based on ICA and cohort labels
+In the option, ICA is applied to the cohort labels separately. This is very important because during the analysis we may find some malignant feature, and we can know whether cohort A or B has this malignant feature especially when none of the cohorts is a control group. However, the disadvantage is some of the components across different cohorts may be highly correlated. Therefore, a feature selection method needs to be done after the combination of all components from different cohorts. In our case, we calculate the Pearson correlation matrix, and use the threshold (0.65 as default) set later in ML algorithm settings by users to exclude overlapping features.
+
+![image](https://github.com/user-attachments/assets/928015f9-8c0d-41db-8636-b1a6544c5e18)
+
+
+### Based on ICA
+In the option, ICA is applied to all the cohorts at one time. The advantage is that it decreases the possibility of generating overlapping components. The disadvantage is if cohorts are imbalanced, ICA may not capture the specific component, and as mentioned user will not know whether a malignant feature is more closed to cohort A or B if none of them is a control group.
+
+![image](https://github.com/user-attachments/assets/b914b3c8-b2ba-4271-8e4d-91acef825560)
+
+At the same time, user have option to create new Feature called IMF for all patients.
+
+![image](https://github.com/user-attachments/assets/13842b63-a7d8-42df-8f13-88538d9238ec)
+
+
+
+### Based on ORA
+Over-representation analysis (ORA) is used to determine which a priori defined gene sets are more present (over-represented) in a subset of “interesting” genes than what would be expected by chance. To infer functional enrichment scores, we will run the ORA method. As input data, it accepts an expression matrix. The top 5% of expressed genes by sample are selected as the set of interest. The final score is obtained by log-transforming the obtained p-values, meaning that higher values are more significant.
+We then map the score into pathways according to the annotated gene sets in Molecular Signatures Database (MSigDB). Users can choose different gene sets to compare among cohorts, for example Hallmark or Reactome. In our example, we choose Reactome and cell type signature.
+
+![image](https://github.com/user-attachments/assets/35bb445d-b7cd-4ad8-8a3d-953dbb193871)
+
+Here you can have options, which label will be used for differentiate, and which label will be used for plot. Since we want to find the similarity for drug response between two different drugs. We choose LABEL for differentiate and LABEL1 for plot.
+
+The next picture shows after processing, it shows the differentiated pathways similar to DEGs between response and non-response groups.
+
+![image](https://github.com/user-attachments/assets/84f8a7b8-346f-48f0-9e2f-a3c0de21e6fa)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
