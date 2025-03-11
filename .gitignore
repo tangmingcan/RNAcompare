@@ -10,3 +10,4 @@ accounts/__pycache__
 test/
 uploaded/
 db.sqlite3*
+.ipynb_checkpoints
