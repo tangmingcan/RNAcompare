@@ -170,7 +170,7 @@ As the previous analysis will return components of interest, this tab helps to i
 
 ## Result & Demonstration
 ### Data Collection
-Our platform supports the integration of multi-omics data with clinical data, facilitating a comprehensive analysis that combines not only genetic, transcriptomic, proteomic, and metabolomic data but also RNA-seq and microarray with patient-specific clinical information. This integrated approach allows users to uncover more complex and clinically relevant insights. After clicking the ‘Upload’ button in the sidebar, uploaded information about the study and experiment is displayed in the panel. It shows the first 5 rows for dataset with column names. User will have option to select log2 to transform the dataset later. For later calculation.
+Our platform supports the integration of multi-omics data with clinical data, facilitating a comprehensive analysis that combines not only genetic, transcriptomic, proteomic, and metabolomic data but also RNA-seq and microarray with patient-specific clinical information. This integrated approach allows users to uncover more complex and clinically relevant insights. After clicking the ‘Upload’ button in the sidebar, uploaded information about the study and experiment is displayed in the panel. It shows the first 5 rows for dataset with column names. User will have option to select log1p to transform the dataset later. For later calculation.
 User can upload more than one expression files which will be treated as different batches.
 
 ![image](https://github.com/user-attachments/assets/1b6d2846-6e3d-42a1-92c5-e87ee6e66bfc)
