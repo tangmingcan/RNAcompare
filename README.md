@@ -242,6 +242,21 @@ Here, the user has the option to associate selected clinical data parameters wit
 
 ![image](https://github.com/user-attachments/assets/37ff9341-b720-4131-85f4-26f52cab72b8)
 
+![image](https://github.com/user-attachments/assets/7a0e40fb-7f22-4df1-b95a-97922062e55f)
+
+Then you can check metagene_6_'s enrichment analysis result in Enrichment Analysis tab.
+
+![image](https://github.com/user-attachments/assets/bcf6bcdd-fac3-44b3-ad9a-b7e0a329c939)
+
+### Causal Analysis
+In the option, users can do causal analysis on treatment efficacy by reducing the selection bias between treatment and control group and handle heterogeneity among patients.
+The platform provides Causal Forests based on PCA/ICA processed components for cohorts. Causal Forests is a machine learning method used for estimating heterogeneous treatment effects (HTE) in observational data. It is an extension of Random Forests designed specifically for causal inference. 
+The reason why we provide both PCA and ICA processed components is because we think when focusing on HTE, we think PCA will be more robust. However, when focusing on explainable components, ICA will be better.
+When using this module, user needs to designate T and Y as the parameters. T is the label representing treatment effect or the predefined cohorts, which we limit only for categorical variables; Y is the dependent variable for phenotype.
+
+![image](https://github.com/user-attachments/assets/bb6d9afd-f357-4a1b-8724-5aa58d5fd12c)
+
+
 
 
 
