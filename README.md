@@ -117,10 +117,9 @@ proxy_set_header X-Real-IP $remote_addr;
 Reload Nginx to apply the changes:`sudo systemctl reload nginx`
 #### Step 10: Constants settings
 In constants.py, there are a few global parameters:
-```python
-ALLOW_UPLOAD = True # This is to control the platform whether to allow user to upload data
-** SHAP_PLOT_DATASET='X' # This is for SHAP importance plot and dependence plot based on X/X_train/X_test dataset. **
-```
+**ALLOW_UPLOAD = True # This is to control the platform whether to allow user to upload data**
+**SHAP_PLOT_DATASET='X' # This is for SHAP importance plot and dependence plot based on X/X_train/X_test dataset.**
+
 ## System Introduction
 ### Platform Features:
 ```
@@ -183,11 +182,11 @@ Similar to RNAcare, user have option to choose built-in compiled cohorts for int
 
 After uploading the data to the platform, user needs to tell the platform which fields in the clinic data will be treated as LABEL/Batches/cohorts. First, a field called "LABEL" is compulsory for the system to recognize. As you see in the picture, user tells the platform to recognize the other two fields as well, namely 'LABEL1', 'LABEL2'. 
 
-** LABEL is the label for disguishing patients for drug response or non-response group.
+**LABEL is the label for disguishing patients for drug response or non-response group.**
 
-LABEL1 is the label for disguishing patients for anti-TNF response/non-response or Rituximab response/non-response group.
+**LABEL1 is the label for disguishing patients for anti-TNF response/non-response or Rituximab response/non-response group.**
 
-LABEL2 is the label for disguishing patients for anti-TNF or Rituximab. **
+**LABEL2 is the label for disguishing patients for anti-TNF or Rituximab.**
 
 After data processing, user will be guided to data visualization part to overview the data.
 
