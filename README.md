@@ -218,15 +218,25 @@ At the same time, user have option to create new Feature called IMF for all pati
 
 ### Based on ORA
 Over-representation analysis (ORA) is used to determine which a priori defined gene sets are more present (over-represented) in a subset of “interesting” genes than what would be expected by chance. To infer functional enrichment scores, we will run the ORA method. As input data, it accepts an expression matrix. The top 5% of expressed genes by sample are selected as the set of interest. The final score is obtained by log-transforming the obtained p-values, meaning that higher values are more significant.
-We then map the score into pathways according to the annotated gene sets in Molecular Signatures Database (MSigDB). Users can choose different gene sets to compare among cohorts, for example Hallmark or Reactome. In our example, we choose Reactome and cell type signature.
+We then map the score into pathways according to the annotated gene sets in Molecular Signatures Database (MSigDB). Users can choose different gene sets to compare among cohorts, for example Hallmark or Reactome. 
+
+#### In our example, we choose Reactome and cell type signature.
 
 ![image](https://github.com/user-attachments/assets/35bb445d-b7cd-4ad8-8a3d-953dbb193871)
 
 Here you can have options, which label will be used for differentiate, and which label will be used for plot. Since we want to find the similarity for drug response between two different drugs. We choose LABEL for differentiate and LABEL1 for plot.
 
-The next picture shows after processing, it shows the differentiated pathways similar to DEGs between response and non-response groups.
+#### The next picture shows after processing, it shows the differentiated pathways similar to DEGs between response and non-response groups.
 
 ![image](https://github.com/user-attachments/assets/84f8a7b8-346f-48f0-9e2f-a3c0de21e6fa)
+
+#### Then you can select a suitable threshold for the target plot.
+From the plot, we can see the difference and similarity between differnt values of LABEL1.
+
+![image](https://github.com/user-attachments/assets/86fe142e-53c4-4543-a0cb-97dff8857099)
+
+
+
 
 
 
