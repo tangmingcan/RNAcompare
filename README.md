@@ -327,7 +327,7 @@ For combined report:
 
 ![image](https://github.com/user-attachments/assets/4ad32902-231c-4767-974b-ee88071be2ef)
 
-Now, we can see after excluding c_agvas,  metagene_5_Ant became more important. Same measure can be done until user find the meanful metagene.
+Now, we can see after excluding c_agvas,  metagene_5_Ant became more important. Same measure can be done until user finds the meanful metagene.
 
 So after we exclude c_das as well, we find what we are looking for.
 
