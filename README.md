@@ -276,6 +276,39 @@ As we see, old aged people is good for anti-TNF treatment. High M is good for an
 
 Metagene_1_ is L1CAM which is related to **pain**, but **Note, we just use RF, and the AUC for Y is not good enough.**
 
+### DML
+After that we generialised the algorithm to double machine learning (DML), which means two machine learning models to overcome Causal Forests’ limitation.
+We then extend Causal Forests and DML to the similarity exploration across different tissues, omics levels and diseases. Under this situation, data harmalisation step is not necessary, which will avoid from potentially removing the biological meaning.
+
+**Note, before running DML, user need to do cohort-ICA first, and it is compulsory.**
+#### Step 1: Do cohort-ICA.
+
+![image](https://github.com/user-attachments/assets/c14811b5-f3e3-4e91-bda9-6b9904536e00)
+
+### Step 2: DML module & Param settings.
+![image](https://github.com/user-attachments/assets/83266ef4-ba82-4dee-a6c6-814def68e731)
+
+#### 2-1. SHAP plot for model I.
+![image](https://github.com/user-attachments/assets/b5dbf046-8683-4f10-a988-da35d621a156)
+
+#### 2-2. SHAP plot for model II.
+![image](https://github.com/user-attachments/assets/29db091b-ab23-486b-9db3-534aa229b8d9)
+
+#### 2-3. Combined SHAP plot/Report.
+![image](https://github.com/user-attachments/assets/ccafa93b-1d33-4e7c-9ddc-b2a3e8b3bd5e)
+
+![image](https://github.com/user-attachments/assets/791427c2-67d7-4783-bf7a-c0b598cf4305)
+
+Here, we can see c_agvas is the most important feature for 2 models and metagene_5_ is the most important component.
+However, unfortunately, when doing enrichment analysis, we didn't find the pathways for metagene_5_.
+One possible explaination is maybe it is still unknown, or ICA make a wrong decomposition. But compared to c_agvas, its importance is very low.
+**Here we have another trick: by making c_agvas as a label to exclude c_agvas. Let's see what we can do.**
+
+
+
+
+
+
 
 
 
