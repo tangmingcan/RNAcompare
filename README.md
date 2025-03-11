@@ -115,9 +115,57 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Real-IP $remote_addr;
 ```
 Reload Nginx to apply the changes:`sudo systemctl reload nginx`
-#### Step 10: Constants setting
+#### Step 10: Constants settings
 In constants.py, there are a few global parameters:
 ```python
 ALLOW_UPLOAD = True # This is to control the platform whether to allow user to upload data
 SHAP_PLOT_DATASET='X' # This is for SHAP importance plot and dependence plot based on X/X_train/X_test dataset.
 ```
+## System Introduction
+### Platform Features:
+```
+1. Association Analysis
+2. Multi-omics Analysis
+3. Imbalanced data consideration
+4. Causal Analysis/Inference
+5. Enrichment Analysis
+```
+### Materials and Methods
+RNAcompare is a development of RNAcare, developed in Python, utilizing several widely used packages. The webserver was built using the Django framework, adhering to the FAIR (Findable, Accessible, Interoperable, and Reusable) principles. The user interface is constructed with a sidebar containing widgets for data collection and transformation options. The platform employs the Plotly graphics system for generating interactive visualizations.
+#### Workflow overview
+##### A - Data Upload 
+The user has the option to use data uploaded previously, upload their data on the fly or a combination of both. As proof of concept, we included the five datasets described above, including clinical and expression data. RNA-Seq requires a read count matrix, which will be normalised later. Other omics data need to be normalised initially before uploading. Clinical data are uploaded as a table. The aim of normalisation is for association analysis, but for Causal analysis, normalisation is not necessary.
+##### B - Data Integration & Visualisation 
+For association analysis, data integration & visualization is recommended for finding differences across cohorts. This is applied for situations where batches are from the same tissue and same disease. Integration will help increase the number of samples while removing batch effects.
+Similar to RNAcare, RNAcompare detects whether the format of the expression data are integers or non-integers before data integration. For integers, the platform handles the expression data as RNA-Seq data, which are transformed from raw counts to CPM (count per million). For non-integers, for example microarray/proteomic data, the platform handles the expression data as normalised data, so users need to pre-normalize these data types if they want.
+The user has the option to log1p transform their data. RNA-Seq data is often highly skewed, with large differences in scale between genes. Log transformation helps stabilise the variance. If this option is selected, the gene expression data will undergo log1p transformation and clinical numeric data will remain the same. Conversely, if the log1p transformation is not selected, the gene expression data will remain unchanged as well. 
+Next, the user has two options for the integration, Harmony and Combat, and three options for feature reduction, principal component analysis (PCA13), t-distributed stochastic neighbour embedding (t-SNE23) and Uniform Manifold Approximation and Projection (UMAP12). In general, it is unclear a priori which integration will generate the best data, and this will vary for different datasets, the user has different options for this in RNAcompare.
+After integration, user can view the result based on feature reduction method they selected before association analysis.
+##### C – Cohort Comparison
+In this section, users have options to choose how to compare different cohorts. We provide 3 different level options for result consistency check. Comparison based on Independent Component Analysis (ICA24) and cohort labels; Comparison based on only Independent Component Analysis; Comparison based on Enrichment Score with Over Representation Analysis(ORA). Their pros and cons will be discussed later in their respective modules. After users choose the option, a new page corresponding to the method will be opened.
+Cohorts can have the different definition, depending on the scenarios. In our case studies, it is a categorical label representing the heterogeneous attribute, such as drugs, tissue types or disease types. Other options can be a label standing for 2 different stages of one disease. As we all know DEGs, sensitive to batch correction, is used for finding the different expression genes between the cohorts. Our platform is trying to looking for similarities, where records from different cohorts with strong heterogeneity usually are not easily merged together after UMAP and clustering methods such as K-Means25. 
+##### D – Based on ICA and cohort labels
+Independent component analysis (ICA) attempts to decompose a multivariate signal into independent non-Gaussian signals. We introduced ICA into multi-omics to decompose the gene expression matrix into independent components. Each independent component was treated as a metagene, characterised by a co-expression pattern and was associated with certain meaningful biological pathway. In practice, we suggest that all clinical fields uploaded before must be named as strings starting with “c_”, such as “c_das”, which will be easy for the program to recognise the expression data and apply ICA algorithm.
+In the option, ICA is applied to the cohort labels separately. Say, for ORBIT, we have 2 drugs (anti-TNF and Rituximab) corresponding to 2 different response results: responder and non-responder. Then at first, we need to find the similarities between anti-TNF responders and Rituximab responders. Then we need to find the differences between Rituximab responders and anti-TNF non-responders. In each step, ICA will be applied to the two different states separately and we use the fixed features from Rituximab responders as the bridge, connecting anti-TNF responder and non-responder. The advantage is each disease cohort has its independent ICA components, representing its own state where imbalanced records across different cohorts will not be a problem and during the down streaming analysis, we know where the feature comes from. This is very important because during the analysis we may find some malignant feature, and we can know whether cohort A or B has this malignant feature especially when none of the cohorts is a control group. However, the disadvantage is some of the components across different cohorts may be highly correlated. Therefore, a feature selection method needs to be done after the combination of all components from different cohorts. In our case, we calculate the Pearson correlation matrix26, and use the threshold (0.65 as default) set by users to exclude overlapping features.
+Or we can first group the above-mentioned records into 2 cohorts: responders and non-responders before uploading. It all depends on the chosen granularity as long as the number of records in each cohort is enough (at least 10, we recommend).
+##### E – Based on ICA
+In the option, ICA is applied to all the cohorts at one time. The advantage is that it decreases the possibility of generating overlapping components. The disadvantage is if cohorts are imbalanced, ICA may not capture the specific component, and as mentioned user will not know whether a malignant feature is more closed to cohort A or B if none of them is a control group. For the former issue, Synthetic Minority Oversampling Technique (SMOTE27) will be a potential solution via over-sampling the small-sized cohort and under-sampling the large-sized cohort. Another down side is that as the total number of the records processed by ICA increases, its final result may be not stable. To solve this, user needs to increase the number of iterations and number of components to get a relatively stable result. However, it will challenge the time complexity of the online real-time analysis.
+##### F – Based on ORA
+Over-representation analysis (ORA) is used to determine which a priori defined gene sets are more present (over-represented) in a subset of “interesting” genes than what would be expected by chance28. To infer functional enrichment scores, we will run the ORA method. As input data, it accepts an expression matrix. The top 5% of expressed genes by sample are selected as the set of interest. The final score is obtained by log-transforming the obtained p-values, meaning that higher values are more significant.
+We then map the score into pathways according to the annotated gene sets in Molecular Signatures Database (MSigDB29). Users can choose different gene sets to compare among cohorts, for example Hallmark or Reactome. In our example, we choose Reactome and cell type signature.
+##### G – Association Analysis
+Here, the user has the option to associate selected clinical data parameters with the (harmonised) omics data in order to study phenotypes. We provide Random Forests30, XGBoost31 and LightGBM32 with its corresponding parameters for basic tuning. The data will be split into training and test (20%) datasets. AUC-ROC33 or MSE34 will be shown according to different cases. This module will provide SHAP35 feature importance plot and SHAP dependence plot.
+SHAP (SHAPley Additive exPlanations) values are a way to explain the output of any machine learning model. It uses a game theoretic approach that measures each player's contribution to the final outcome. In machine learning, each feature is assigned an importance value representing its contribution to the model's output. SHAP values show how each feature affects each final prediction, the significance of each feature compared to others, and the model's reliance on the interaction between features.
+##### H – Causal analysis
+In the option, users can do causal analysis on treatment efficacy by reducing the selection bias between treatment and control group and handle heterogeneity among patients.
+The platform provides Causal Forests based on PCA/ICA processed components for cohorts. Causal Forests is a machine learning method used for estimating heterogeneous treatment effects (HTE) in observational data. It is an extension of Random Forests designed specifically for causal inference. 
+The reason why we provide both PCA and ICA processed components is because we think when focusing on HTE, we think PCA will be more robust. However, when focusing on explainable components, ICA will be better.
+When using this module, user needs to designate T and Y as the parameters. T is the label representing treatment effect or the predefined cohorts, which we limit only for categorical variables; Y is the dependent variable for phenotype.
+##### I – Double Machine Learning
+After that we generialised the algorithm to double machine learning (DML), which means two machine learning models to overcome Causal Forests’ limitation.
+We then extend Causal Forests and DML to the similarity exploration across different tissues, omics levels and diseases. Under this situation, data harmalisation step is not necessary, which will avoid from potentially removing the biological meaning.
+##### J – Enrichment analysis
+As the previous analysis will return components of interest, this tab helps to identify biological pathways and signature sets significantly enriched in the dataset.
+
+![image](https://github.com/user-attachments/assets/24f34712-6ffa-4575-9b6e-377a6c12630b)
+
