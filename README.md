@@ -299,10 +299,49 @@ We then extend Causal Forests and DML to the similarity exploration across diffe
 
 ![image](https://github.com/user-attachments/assets/791427c2-67d7-4783-bf7a-c0b598cf4305)
 
-Here, we can see c_agvas is the most important feature for 2 models and metagene_5_ is the most important component.
+Here, we can see c_agvas is the most important feature for 2 models and metagene_5_Ant is the most important component.
 However, unfortunately, when doing enrichment analysis, we didn't find the pathways for metagene_5_.
 One possible explaination is maybe it is still unknown, or ICA make a wrong decomposition. But compared to c_agvas, its importance is very low.
 **Here we have another trick: by making c_agvas as a label to exclude c_agvas. Let's see what we can do.**
+
+#### 2-4. Making c_agvas as a label and exclude it.
+Under 'Data Processing' tab, we make c_agvas as a label, similar to RNAcare, separating patients with c_agvas into 2 subgroups: low and high. Then we need to activate the label!
+
+![image](https://github.com/user-attachments/assets/37dfde53-9bb6-4157-9378-9275e1f89265)
+
+**Activate the created label**
+
+![image](https://github.com/user-attachments/assets/542295c3-c1a4-4318-ad06-2d2d4a719578)
+
+After that we run DML again and let's see the result.
+
+For Model I:
+
+![image](https://github.com/user-attachments/assets/b57e34a8-3de5-43b6-a25c-89fb18228fc8)
+
+For Model II:
+
+![image](https://github.com/user-attachments/assets/ca481991-bfd7-4805-9b0b-aa279b860e10)
+
+For combined report:
+
+![image](https://github.com/user-attachments/assets/4ad32902-231c-4767-974b-ee88071be2ef)
+
+Now, we can see after excluding c_agvas,  metagene_5_Ant became more important. Same measure can be done until user find the meanful metagene.
+
+So after we exclude c_das as well, we find what we are looking for.
+
+![image](https://github.com/user-attachments/assets/fcff466c-d65d-46ce-b5ff-428dc55b1dcf)
+
+We do Enrichment analysis for metagene_2_Ant and find it is enriched in REACTOME_NONSENSE_MEDIATED_DECAY_NMD.
+
+![image](https://github.com/user-attachments/assets/4a3d4020-0b0b-4a27-a9dd-83db3ed098cd)
+
+
+
+
+
+
 
 
 
