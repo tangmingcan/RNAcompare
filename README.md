@@ -170,5 +170,6 @@ As the previous analysis will return components of interest, this tab helps to i
 ![image](https://github.com/user-attachments/assets/24f34712-6ffa-4575-9b6e-377a6c12630b)
 
 ## Result & Demonstration
-![image](https://github.com/user-attachments/assets/0f533514-8842-4692-9190-1a73e436ae96)
+![image](https://github.com/user-attachments/assets/1b6d2846-6e3d-42a1-92c5-e87ee6e66bfc)
+
 
