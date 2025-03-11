@@ -122,7 +122,7 @@ def runDgea(clusters, adata, targetLabel, n_genes):
                             adata, groupby="batch1", method="t-test"
                         )
                         sc.tl.dendrogram(adata, groupby="batch1")
-                        fig1 = sc.pl.rank_genes_groups_dotplot(
+                        sc.pl.rank_genes_groups_dotplot(
                             adata, n_genes=int(n_genes), show=False, color_map="bwr"
                         )
                         plt.savefig(
@@ -130,12 +130,13 @@ def runDgea(clusters, adata, targetLabel, n_genes):
                             format="svg",
                             bbox_inches="tight",
                         )
-                        base64.b64encode(figure1.getvalue()).decode("utf-8")
+                        figure1.seek(0)
+                        figure1 = base64.b64encode(figure1.getvalue()).decode("utf-8")
                     else:
                         figure1 = ""
                     if len(set(adata.obs[targetLabel])) > 1:
                         adata.obs[targetLabel] = adata.obs[targetLabel].astype(str)
-                        fig2 = sc.tl.rank_genes_groups(
+                        sc.tl.rank_genes_groups(
                             adata, groupby=targetLabel, method="t-test"
                         )
                         sc.tl.dendrogram(adata, groupby=targetLabel)
@@ -147,7 +148,8 @@ def runDgea(clusters, adata, targetLabel, n_genes):
                             format="svg",
                             bbox_inches="tight",
                         )
-                        base64.b64encode(figure2.getvalue()).decode("utf-8")
+                        figure2.seek(0)
+                        figure2 = base64.b64encode(figure2.getvalue()).decode("utf-8")
                     else:
                         figure2 = ""
                 plt.close('all')
