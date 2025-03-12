@@ -17,12 +17,11 @@ app = Celery(
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
-app.conf.result_expires = 5
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 app.conf.update(
-    result_expires=3600,
+    result_expires=5,
     task_serializer="pickle",
     result_serializer="pickle",
     accept_content=["pickle", "json"],
