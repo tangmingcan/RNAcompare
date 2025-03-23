@@ -507,7 +507,18 @@ def downloadICA(request):
         return HttpResponse(checkRes["message"], status=400)
     else:
         usr = checkRes["usrData"]
-    result_df = usr.metagenes
+    typ = request.GET.get("type", 'ica')
+    if typ=='ica':
+        if len(usr.metagenes)!=1:
+            return HttpResponse("Please run ICA first.", status=400)
+        result_df = usr.metagenes[0]
+    else:
+        if len(usr.metagenes)!=4:
+            return HttpResponse("Please run ICA-cohort first.", status=400)
+        X11, X12, X21, X22 = usr.metagenes
+        temp1 = pd.concat([X11,X22], axis=1)
+        temp2 = pd.concat([X12,X21], axis=1)
+        result_df = pd.concat([temp1, temp2], axis=0, join='inner')
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = "attachment; filename=ica.csv"
     result_df.to_csv(path_or_buf=response)
