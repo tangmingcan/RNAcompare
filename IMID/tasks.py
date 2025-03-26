@@ -541,6 +541,8 @@ def run_DMLreport(model1, X1, model2, X2):
     def compute_shap_importance(model, X):
         explainer = shap.TreeExplainer(model, X)
         shap_values = explainer(X)
+        if len(shap_values.shape)!=2:
+            shap_values = shap_values[:,:,1]
         shap_df = pd.DataFrame(shap_values.values, columns=X.columns)
         return shap_values, shap_df.abs().mean(axis=0)
         
