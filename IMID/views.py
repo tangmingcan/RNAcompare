@@ -480,6 +480,7 @@ def goenrich(request):
         usr = checkRes["usrData"]   
     cohort = request.GET.get("cohort", None)
     metagene = request.GET.get("metagene", None)
+    thre = float(request.GET.get("thre", 3))
     if metagene is None:
         return HttpResponse("Illegal Metagene Name.", status=400)
     if cohort is None and (len(usr.metagenes)!=1 or len(usr.metageneCompose)==0):
@@ -489,11 +490,11 @@ def goenrich(request):
     try:
         if cohort is None or cohort=='A':
             result = runTopFun.apply_async(
-                (usr.metageneCompose[0], metagene), serializer="pickle"
+                (usr.metageneCompose[0], metagene, thre), serializer="pickle"
             ).get()
         else:
             result = runTopFun.apply_async(
-                (usr.metageneCompose[1], metagene), serializer="pickle"
+                (usr.metageneCompose[1], metagene, thre), serializer="pickle"
             ).get()
     except Exception as e:
         return HttpResponse(str(e), status=400)

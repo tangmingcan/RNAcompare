@@ -1057,8 +1057,8 @@ function goMetagenes(n)
     else selectedValue = $('#metagene-select2').val();
     if(selectedValue=='') return;
     cohort = $('#metagene-cohort-select').val();
-    if(n==1) url='/goenrich/?cohort='+cohort+'&metagene='+selectedValue;
-    else url='/goenrich/?metagene='+selectedValue;
+    if(n==1) url='/goenrich/?cohort='+cohort+'&metagene='+selectedValue+'&thre='+$('#thre1').val();
+    else url='/goenrich/?metagene='+selectedValue+'&thre='+$('#thre2').val();
 	url+='&cID='+clientUniqueID;
 	// If table already exists, destroy it first
 	if ($.fn.DataTable.isDataTable('#metagenes_table')) {
@@ -2213,6 +2213,10 @@ function run_cf2(){
 						    </select>
 		                </td>
 		                <td>
+		                		<p>Input threshold:</p>
+		                		<input type="number" id="thre1" value="3" step="0.1" min="0" max="8" style="width: 80px;" required>
+		                </td>
+		                <td>
 		                    <button id="metagene_btn1" class="btn btn-primary" style="margin-left:100px;" onclick="goMetagenes(1);">Enrichment Analysis</button>
 		                </td>
 		            </tr>
@@ -2220,11 +2224,23 @@ function run_cf2(){
         	    <br><br>	   
 	        </div>
     	    <div id='tabs-7-2'>
-    	        <p>Select the metagenes:</p>
-        	    <select id='metagene-select2'>
-        	        <option value='' selected='selected'>----SELECT----</option>
-        	    </select>
-        	    <button id="metagene_btn2" class="btn btn-primary" style="margin-left:100px;" onclick="goMetagenes(2);">Enrichment Analysis</button>
+    	    	<table>
+    	    		<tr>
+    	    			<td>
+    	        		<p>Select the metagenes:</p>
+        	    			<select id='metagene-select2'>
+        	        		<option value='' selected='selected'>----SELECT----</option>
+        	    			</select>
+        	    	</td>
+        	    	<td>
+        	    			<p>Input threshold:</p>
+		                <input type="number" id="thre2" value="3" step="0.1" min="0" max="8" style="width: 80px;" required>
+        	    	</td>
+        	    	<td>
+        	    		<button id="metagene_btn2" class="btn btn-primary" style="margin-left:100px;" onclick="goMetagenes(2);">Enrichment Analysis</button>
+        	    	</td>
+        	    </tr>
+        	  </table>
         	    <br><br>
     	    </div>
     	</div>

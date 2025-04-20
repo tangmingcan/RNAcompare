@@ -290,10 +290,10 @@ def runPCA(df, num):
 
 
 @shared_task(time_limit=180, soft_time_limit=150)
-def runTopFun(metageneCompose, name):
+def runTopFun(metageneCompose, name, thre):
     Tannot = toppfun.ToppFunAnalysis(
         data=metageneCompose,
-        threshold=3,
+        threshold=thre,
         method="std",
         tail="heaviest",
         convert_ids=True,
@@ -507,7 +507,7 @@ def run_GB(typeRf, param, X, X_train, y_train, X_test, y_test, testRatio):
 @shared_task(time_limit=60*4, soft_time_limit=230)
 def run_shap(model, X, flip='no'):
     explainer = shap.TreeExplainer(model, X)
-    shap_values = explainer(X)
+    shap_values = explainer(X,check_additivity=False)
     if len(shap_values.shape)!=2:
         shap_values = shap_values[:,:,1]
     feature_order = None

@@ -23,3 +23,6 @@ stabilized-ica
 decoupler
 git+https://github.com/ncaptier/sica-omics.git
 econml
+jwt
+xgboost
+shap==0.43.0
