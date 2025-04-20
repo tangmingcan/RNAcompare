@@ -25,3 +25,4 @@ git+https://github.com/ncaptier/sica-omics
 econml
 jwt
 xgboost
+shap==0.38.1
