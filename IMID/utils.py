@@ -552,8 +552,10 @@ def integrateExData(files, temp0, log2, corrected):
     if log2 == "Yes":
         dfs = [np.log1p(i.to_df()) for i in dfs]
     else:
-        dfs_centered = [center_df(df.to_df()) for df in dfs]
-        dfs1 = pd.concat(dfs_centered, axis=0, join='inner')
+        dfs = [i.to_df() for i in dfs]
+        if corrected == 'nocorrection':
+            dfs_centered = [center_df(df) for df in dfs]
+            dfs = pd.concat(dfs_centered, axis=0, join='inner')
 
     dfs1 = None
     if len(dfs) > 1:
